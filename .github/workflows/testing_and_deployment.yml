@@ -2,6 +2,9 @@ name: Unit Tests, build & deploy library
 on:
   push:
     branches: [ main ]
+    # Exclude commits with the specific commit message from triggering the workflow
+    paths-ignore:
+      - '**.md'
 jobs:
 
   # BUILD AND TEST THE LIBRARY
@@ -41,7 +44,7 @@ jobs:
   # DEPLOY THE LIBRARY TO PYPI   
   pypi-publish:
     needs: build
-    if: github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[AUTO]') == false
+    #if: github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[AUTO]') == false
     name: upload release to PyPI
     runs-on: ubuntu-latest
     #environment: release  # Define your GitHub Environment name here
