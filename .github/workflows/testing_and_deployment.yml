@@ -26,15 +26,17 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Install Docker Compose
       run: sudo curl -L "https://github.com/docker/compose/releases/download/v2.2.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose
+    - name: List contents of root directory
+      run: ls -l /
     - name: Start Redis Cluster
-      run: docker-compose -f tests/docker-compose.yml up -d
+      run: docker-compose -f /tests/docker-compose.yml up -d
     - name: Running all PyTests
       env:
         REDIS_OM_URL: redis://localhost:6379/0
       run: |
         pytest -s -vv
     - name: Shutdown Redis Cluster
-      run: docker-compose -f tests/docker-compose.yml down
+      run: docker-compose -f /tests/docker-compose.yml down
 
   # DEPLOY THE LIBRARY TO PYPI
   deploy:
