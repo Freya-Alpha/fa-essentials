@@ -3,3 +3,4 @@ setuptools
 twine
 pytest
 redis[hiredis]
+pyyaml 

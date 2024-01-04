@@ -1,12 +1,11 @@
 import re
 from typing import Set
-from src import globallogger
+from . import global_logger
 
-
-class PairFormatter:
+class AssetFormatter:
     def __init__(self, default_quote_asset: str = "USDT") -> None:
         self.default_quote_asset = default_quote_asset
-        self.logger = globallogger.setup_custom_logger("app")
+        self.logger = global_logger.setup_custom_logger("app")
 
     def unwrap_symbol(self, wrapped_symbol):
         # Define the pairs of wrapped and unwrapped symbols
@@ -109,14 +108,14 @@ class PairFormatter:
         return {self.format_to_slash(pair) for pair in markets}
 
 
-class BinanceFormatter(PairFormatter):
+class BinanceFormatter(AssetFormatter):
     def format_pair(self, pair_string: str) -> str:
         match = re.match(r"([A-Za-z]+)[/-]?([A-Za-z]+)", pair_string)
         base_asset, _ = match.groups()
         return f"{base_asset}-{self.default_quote_asset}"
 
 
-class BybitFormatter(PairFormatter):
+class BybitFormatter(AssetFormatter):
     def format_pair(self, pair_string: str) -> str:
         match = re.match(r"([A-Za-z]+)[/-]?([A-Za-z]+)", pair_string)
         base_asset, _ = match.groups()

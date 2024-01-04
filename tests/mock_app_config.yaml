@@ -1,0 +1,4 @@
+application: TestApp
+domain: test.domain.com
+env: DEV
+logging_level: INFO

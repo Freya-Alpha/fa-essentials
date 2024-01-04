@@ -1,7 +1,7 @@
 import logging
 import queue
 import logging.handlers
-import utils
+from . import utils
 
 loggers = {}
 
