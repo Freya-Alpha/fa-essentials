@@ -1,16 +1,39 @@
 import os
+import pathlib
 from pathlib import Path
 import yaml
 from redis.cluster import RedisCluster, ClusterNode
 
-def get_project_root() -> str:
-    str_path = str(Path(__file__).parent.parent)
-    # print(f"utils.py: {str_path}")
-    return str_path
+# Determine the project root path when the module is loaded
+PROJECT_ROOT = None
+
+def find_project_root(current_path: pathlib.Path, max_depth: int = 10) -> pathlib.Path:
+    """
+    Recursively search for a marker (like the 'config' or 'logs' directory) to find the project root.
+    """
+    for _ in range(max_depth):
+        if (current_path / "config").exists() or (current_path / "logs").exists():
+            return current_path
+        current_path = current_path.parent
+    raise FileNotFoundError("Could not find the project root. Ensure the 'config' or 'logs' folder exists.")
+
+# Initialize PROJECT_ROOT when the module is loaded
+def initialize_project_root():
+    global PROJECT_ROOT
+    PROJECT_ROOT = find_project_root(pathlib.Path(__file__).resolve())    
+
+initialize_project_root()
 
 def get_project_root_path() -> Path:
-    abs_path = Path(__file__).parent.parent.absolute()
-    return abs_path
+    """
+    Return the project root path.
+    """
+    return PROJECT_ROOT
+
+def get_project_root() -> str:
+    str_path = str(PROJECT_ROOT)
+    # print(f"utils.py: {str_path}")
+    return str_path
 
 def get_log_path() -> Path:
     abs_path = get_project_root_path().joinpath("logs")
@@ -22,15 +45,15 @@ def get_secrets_path() -> Path:
 
 def get_app_config() -> dict:
     app_cfg = None
-    with open(
-        get_project_root_path().joinpath("config/app_config.yaml"), "r"
-    ) as ymlfile:
-        try:
+    try:
+        project_root = find_project_root(pathlib.Path(__file__).resolve())
+        config_path = project_root.joinpath("config/app_config.yaml")
+        with open(config_path, "r") as ymlfile:
             app_cfg = yaml.safe_load(ymlfile)
-        except yaml.YAMLError as ex:
-            raise FileNotFoundError(
-                f"Failed to load the config/app_config.yaml file. Aborting the application. Error: {ex}"
-            )
+    except yaml.YAMLError as ex:
+        raise FileNotFoundError(
+            f"Failed to load the config/app_config.yaml file. Aborting the application. Error: {ex}"
+        )
     return app_cfg
 
 def get_application_name() -> str:

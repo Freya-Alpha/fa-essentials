@@ -1,3 +1,4 @@
+import pytest
 from faessentials.asset_formatter import AssetFormatter, BinanceFormatter, BybitFormatter 
 
 # Test unwrap_symbol
@@ -12,16 +13,16 @@ def test_unwrap_market():
     assert formatter.unwrap_market('WETH/USDT') == 'ETH/USDT'
     assert formatter.unwrap_market('BTC-USDT') == 'BTC-USDT'
 
-# Test clean_markets
-def test_clean_markets():
-    formatter = AssetFormatter()
-    markets = {
-        'BTC/USDT', 'ETH-USD', 'INVALIDMARKET', 'TOOLONGMARKETNAME1234'
-    }
-    expected = ['BTC/USDT', 'ETH-USD']  # Use a list instead of a set
-    actual = formatter.clean_markets(markets)
-    
-    assert sorted(actual) == sorted(expected)  # Compare sorted lists
+@pytest.mark.parametrize("input_markets, expected_output", [
+    (["BTC/USDT", "ETH-USDT", "SOL/USDT"], ["BTC/USDT", "ETH-USDT", "SOL/USDT"]),  # valid markets
+    (["BTCUSDT", "ETH*USDT", "SOLUSDT"], []),  # invalid markets (missing '-' or '/')
+    (["BTC/USDT", "ETH*USDT", "SOL-USDT"], ["BTC/USDT", "SOL-USDT"]),  # mix of valid and invalid
+    (["BTC/USDTLONGG", "SHORT/ETH", "12CHARS-XY"], ["SHORT/ETH", "12CHARS-XY"]),  # check length and required characters
+    (["BTC-USDT", "ETH/USDT", "SOL"], ["BTC-USDT", "ETH/USDT"]),  # valid and without required characters
+    ([], [])  # empty list
+])
+def test_clean_markets(input_markets, expected_output):
+    assert AssetFormatter().clean_markets(input_markets) == expected_output
 
 
 # Test get_base and get_quote

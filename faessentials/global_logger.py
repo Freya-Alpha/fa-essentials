@@ -1,10 +1,10 @@
+import inspect
 import logging
 import queue
 import logging.handlers
 from . import utils
 
 loggers = {}
-
 
 def setup_custom_logger(name):
     global loggers
@@ -43,6 +43,19 @@ def setup_custom_logger(name):
         listener = logging.handlers.QueueListener(
             log_queue, stream_handler, timerotating_handler, respect_handler_level=True
         )
+
+        # Only print the following when instantiated by the main.py file - and not other files.
+        # This will ensure that the important project variables are printet on startup.
+        current_stack = inspect.stack()
+        if any("main.py" in frame.filename for frame in current_stack):
+            # Print settings:
+            logger.info(f"Starting {utils.get_application_name()} in {utils.get_environment()}.")
+            logger.info(f"Domain {utils.get_domain_name()}")
+            logger.info(f"Root {utils.get_project_root()}")
+            logger.info(f"Log Path {utils.get_log_path()}")
+            logger.info(f"Logging Level {utils.get_logging_level()}")
+            logger.info(f"Redis Cluster Service Name {utils.get_redis_cluster_service_name()}")
+            
 
         listener.start()
 

@@ -3,16 +3,20 @@ import pytest
 import yaml
 from faessentials import utils
 
-# Mock for the __file__ attribute in utils module
-utils.__file__ = __file__
+@pytest.fixture
+def mock_project_root(monkeypatch, tmp_path):
+    # Directly set the PROJECT_ROOT in the utils module
+    utils.PROJECT_ROOT = tmp_path
+    return tmp_path
 
-def test_get_project_root():
-    expected_path = str(Path(__file__).parent.parent)
+def test_get_project_root(mock_project_root):
+    expected_path = str(mock_project_root)
     assert utils.get_project_root() == expected_path
 
-def test_get_project_root_path():
-    expected_path = Path(__file__).parent.parent.absolute()
-    assert utils.get_project_root_path() == expected_path
+
+def test_get_project_root_path(mock_project_root):
+    assert utils.get_project_root_path() == mock_project_root
+
 
 def test_get_app_config(monkeypatch, tmp_path):
     # Create a temporary config directory
@@ -30,17 +34,16 @@ def test_get_app_config(monkeypatch, tmp_path):
     with open(mock_config_file, "w") as file:
         yaml.dump(expected_config, file)
 
-    # Mock get_project_root_path to return the temporary directory
-    def mock_get_project_root_path():
+    # Override the `find_project_root` function to return the tmp_path
+    def mock_find_project_root(*args, **kwargs):
         return tmp_path
 
-    monkeypatch.setattr(utils, "get_project_root_path", mock_get_project_root_path)
+    monkeypatch.setattr(utils, "find_project_root", mock_find_project_root)
 
     # Run the test
     assert utils.get_app_config() == expected_config
 
 def test_get_application_name_success(monkeypatch):
-    # Mock get_app_config to return a dict with an application name
     def mock_get_app_config():
         return {"application": "TestApp"}
 
@@ -48,7 +51,6 @@ def test_get_application_name_success(monkeypatch):
     assert utils.get_application_name() == "TestApp"
 
 def test_get_application_name_failure(monkeypatch):
-    # Mock get_app_config to return a dict without an application name
     def mock_get_app_config():
         return {}
 
@@ -57,7 +59,6 @@ def test_get_application_name_failure(monkeypatch):
         utils.get_application_name()
 
 def test_get_domain_name_success(monkeypatch):
-    # Mock get_app_config to return a dict with a domain name
     def mock_get_app_config():
         return {"domain": "test.domain.com"}
 
@@ -65,7 +66,6 @@ def test_get_domain_name_success(monkeypatch):
     assert utils.get_domain_name() == "test.domain.com"
 
 def test_get_domain_name_failure(monkeypatch):
-    # Mock get_app_config to return a dict without a domain name
     def mock_get_app_config():
         return {}
 
@@ -75,12 +75,10 @@ def test_get_domain_name_failure(monkeypatch):
 
 def test_get_redis_cluster_service_name_with_env(monkeypatch):
     monkeypatch.setenv("REDIS_CLUSTER_NODES", "redis-node1:1234")
-
     expected_result = ["redis-node1", "1234"]
     assert utils.get_redis_cluster_service_name() == expected_result
 
 def test_get_redis_cluster_service_name_default(monkeypatch):
     monkeypatch.delenv("REDIS_CLUSTER_NODES", raising=False)
-
     expected_result = ["redis-cluster-leader", "6379"]
     assert utils.get_redis_cluster_service_name() == expected_result
