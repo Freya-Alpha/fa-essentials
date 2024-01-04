@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "fa-essentials"
 version = "1.0.0"
-description = "Essentials for our projects."
+description = "Essentials for our fa projects."
 readme = "README.md"
 authors = [{ name = "Brayan", email = "brayan@sparkandhale.com" }]
 #license = { file = "LICENSE" }
