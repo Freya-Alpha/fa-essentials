@@ -40,6 +40,8 @@ jobs:
 
   # DEPLOY THE LIBRARY TO PYPI   
   pypi-publish:
+    needs: build
+    if: github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[AUTO]') == false
     name: upload release to PyPI
     runs-on: ubuntu-latest
     #environment: release  # Define your GitHub Environment name here
