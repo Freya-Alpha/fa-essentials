@@ -1,5 +1,6 @@
 version: '3.8'
-name: 'fa-redis-cluster-local'
+# not a valid top-level property
+# name: 'fa-redis-cluster-local'
 services:
   node1:
     container_name: leader_1
