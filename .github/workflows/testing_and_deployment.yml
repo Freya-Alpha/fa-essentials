@@ -29,14 +29,14 @@ jobs:
     - name: List repository contents
       run: ls -la    
     - name: Start Redis Cluster
-      run: docker-compose -f /tests/docker-compose.yml up -d
+      run: docker-compose -f tests/docker-compose.yaml up -d
     - name: Running all PyTests
       env:
         REDIS_OM_URL: redis://localhost:6379/0
       run: |
         pytest -s -vv
     - name: Shutdown Redis Cluster
-      run: docker-compose -f /tests/docker-compose.yml down
+      run: docker-compose -f tests/docker-compose.yaml down
 
   # DEPLOY THE LIBRARY TO PYPI
   deploy:
