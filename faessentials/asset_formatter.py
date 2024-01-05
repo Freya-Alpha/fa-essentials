@@ -6,16 +6,20 @@ class AssetFormatter:
     def __init__(self, default_quote_asset: str = "USDT") -> None:
         self.default_quote_asset = default_quote_asset
         self.logger = global_logger.setup_custom_logger("app")
+        self.symbol_pairs = {"WETH": "ETH"}
 
     def unwrap_symbol(self, wrapped_symbol):
-        # Define the pairs of wrapped and unwrapped symbols
-        symbol_pairs = {
-            'WETH': 'ETH'
-        }
         # Convert the input to uppercase to make the function case-insensitive
         wrapped_symbol_upper = wrapped_symbol.upper()
         # Return the unwrapped symbol, or the original symbol if not found
-        return symbol_pairs.get(wrapped_symbol_upper, wrapped_symbol)
+        return self.symbol_pairs.get(wrapped_symbol_upper, wrapped_symbol)
+
+    def get_wrapped_symbol(self, original_symbol) -> str:
+        """Returns the wrapped symbol for an asset. Or None"""
+        for key, val in self.symbol_pairs.items():
+            if val == original_symbol:
+                return key
+        return None
 
     def unwrap_market(self, market):
         # Extract the base and quote assets from the market string
@@ -72,6 +76,9 @@ class AssetFormatter:
 
     def format_pair(self, pair_string: str) -> str:
         raise NotImplementedError("This method should be implemented by subclasses.")
+    
+    def format_set_of_pairs(self, pairs: Set[str]) -> Set[str]:
+        return {self.format_pair(pair) for pair in pairs}
 
     def format_pair_default(self, pair_string: str) -> str:
         """Will format the pair string to a slash-format. Mainly used for the ccxt LIB."""
