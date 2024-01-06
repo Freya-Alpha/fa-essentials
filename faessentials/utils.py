@@ -71,6 +71,15 @@ def get_domain_name() -> str:
 def get_environment() -> str:
     return os.environ.get("ENV", get_app_config()["env"])
 
+def get_service_url() -> str:
+    """This own service url value. This global environment variable is usually used by consumers apps of this API."""
+    return os.getenv("OPENAPI_SERVICE_URL", "http://localhost:8080")
+
+def get_service_doc_url() -> str:
+    """Return the OpenAPI url"""
+    return f"{get_service_url}/docs"
+
+
 def get_logging_level() -> str:
     return get_app_config().get("logging_level", os.getenv("LOGGING_LEVEL", "DEBUG")).upper()
 
