@@ -38,8 +38,6 @@ jobs:
         mkdir -p config
         mkdir -p logs
     - name: Running all PyTests
-      env:
-        REDIS_OM_URL: redis://localhost:6379/0
       run: |
         pytest -s -vv
     - name: Shutdown Redis Cluster
