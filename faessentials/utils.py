@@ -76,7 +76,8 @@ def get_domain_name() -> str:
     return domain_name
 
 def get_environment() -> str:
-    return os.environ.get("ENV", get_app_config()["env"])
+    """Will fetch the environment variable ENV. If not present it will fall back to DEV """
+    return os.environ.get("ENV", "DEV")
 
 def get_service_url() -> str:
     """This own service url value. This global environment variable is usually used by consumers apps of this API."""
