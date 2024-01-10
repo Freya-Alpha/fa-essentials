@@ -95,14 +95,18 @@ class AssetFormatter:
             raise ValueError(f"Invalid pair format: {pair_string}")
 
     def format_to_dash(self, pair_string: str) -> str:
-        """Takes any combinatin of a market pair and replaces the divider by a dash (-)."""
-        match = re.match(r"([A-Za-z]+)[/-]?([A-Za-z]+)", pair_string)
+        """Takes any combination of a market pair and replaces the divider by a dash (-)."""
+        match = re.match(r"([A-Za-z0-9]+)[/-]?([A-Za-z0-9]+)", pair_string)        
+        if match is None:
+            raise ValueError(f"Invalid market pair format: '{pair_string}'")
         base_asset, _ = match.groups()
         return f"{base_asset}-{self.default_quote_asset}"
 
     def format_to_slash(self, pair_string: str) -> str:
         """Takes any combinatin of a market pair and replaces the divider by a front slash (/)."""
-        match = re.match(r"([A-Za-z]+)[/-]?([A-Za-z]+)", pair_string)
+        match = re.match(r"([A-Za-z0-9]+)[/-]?([A-Za-z0-9]+)", pair_string)        
+        if match is None:
+            raise ValueError(f"Invalid market pair format: '{pair_string}'")
         base_asset, _ = match.groups()
         return f"{base_asset}/{self.default_quote_asset}"
 
