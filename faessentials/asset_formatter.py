@@ -76,7 +76,7 @@ class AssetFormatter:
 
     def format_pair(self, pair_string: str) -> str:
         raise NotImplementedError("This method should be implemented by subclasses.")
-    
+
     def format_set_of_pairs(self, pairs: Set[str]) -> Set[str]:
         return {self.format_pair(pair) for pair in pairs}
 

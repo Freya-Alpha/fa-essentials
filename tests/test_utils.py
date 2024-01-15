@@ -1,4 +1,3 @@
-from pathlib import Path
 import pytest
 import yaml
 from faessentials import utils
@@ -13,10 +12,8 @@ def test_get_project_root(mock_project_root):
     expected_path = str(mock_project_root)
     assert utils.get_project_root() == expected_path
 
-
 def test_get_project_root_path(mock_project_root):
     assert utils.get_project_root_path() == mock_project_root
-
 
 def test_get_app_config(monkeypatch, tmp_path):
     # Create a temporary config directory

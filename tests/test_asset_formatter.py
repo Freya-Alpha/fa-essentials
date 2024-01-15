@@ -1,5 +1,5 @@
 import pytest
-from faessentials.asset_formatter import AssetFormatter, BinanceFormatter, BybitFormatter 
+from faessentials.asset_formatter import AssetFormatter, BinanceFormatter, BybitFormatter
 
 # Test unwrap_symbol
 def test_unwrap_symbol():
@@ -23,7 +23,6 @@ def test_unwrap_market():
 ])
 def test_clean_markets(input_markets, expected_output):
     assert AssetFormatter().clean_markets(input_markets) == expected_output
-
 
 # Test get_base and get_quote
 def test_get_base_and_quote():
@@ -59,4 +58,3 @@ def test_binance_formatter():
 def test_bybit_formatter():
     formatter = BybitFormatter()
     assert formatter.format_pair('BTC/USDT') == 'BTC_USDT'
-

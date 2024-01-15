@@ -4,3 +4,5 @@ twine
 pytest
 redis[hiredis]
 pyyaml 
+cryptography  
+email-validator

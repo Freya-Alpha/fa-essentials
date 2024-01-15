@@ -1,0 +1,6 @@
+DEFAULT_ENCODING = "utf-8"
+
+# TODO: Secrets need to be stored in a vault later on
+ENCRYPTION_KEY = "ENCRYPTION_KEY"
+ENCRYPTION_FERNET_KEY = b'2L-dPkzvR7uNR-cAW1TuSGygXZy8Wb5Zk8WAFcMG4ng='
+JWT_SECRET = "JWT_SECRET"
