@@ -6,3 +6,4 @@ redis[hiredis]
 pyyaml 
 cryptography  
 email-validator
+ipaddress

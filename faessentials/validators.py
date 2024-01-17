@@ -1,3 +1,4 @@
+import ipaddress
 from email_validator import validate_email, EmailNotValidError
 
 class Validators:
@@ -7,4 +8,12 @@ class Validators:
             return True
 
         except EmailNotValidError:
+            return False
+
+    def validate_ip_address(self, ip_string: str) -> bool:
+        try:
+            ipaddress.ip_address(ip_string)
+            return True
+       
+        except ValueError:
             return False

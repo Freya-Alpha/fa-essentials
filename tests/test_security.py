@@ -5,9 +5,8 @@ from faessentials.security import Encryption, SecretsStore
 def encryption():
     return Encryption(SecretsStore())
 
-def test_encrypt_and_decrypt_text_message(encryption):
-    message = "test"
-
+@pytest.mark.parametrize("message", ["test", "123908234ÖÄ$ASDFdd", "äjklöèü"])
+def test_encrypt_and_decrypt_text_message(encryption, message):
     encrypted_message = encryption.encrypt_text(message)
     decrypted_message = encryption.decrypt_text_by_token(encrypted_message)
   
