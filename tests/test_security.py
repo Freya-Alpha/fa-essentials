@@ -1,24 +1,34 @@
 import pytest
-from faessentials import security
+from faessentials.security import Crypto, IPSecurity
+from famodels.blocked_ip import BlockedIpReasonType
 
-
-FERNET_KEY = '2L-dPkzvR7uNR-cAW1TuSGygXZy8Wb5Zk8WAFcMG4ng='
+AES_SECRET = "ZufDdKmoYgBv272G0DQWqz8Ng9ewM+IMGIMzkRQUoVNujiCHfdD4EULwXtn5fvwL"
 
 @pytest.mark.parametrize("message", ["test", "123908234ÖÄ$ASDFdd", "äjklöèü"])
 def test_encrypt_and_decrypt_text_message(monkeypatch, message):
-    monkeypatch.setenv("ENCRYPTION_FERNET_KEY", FERNET_KEY)
+    monkeypatch.setenv("AES_SECRET", AES_SECRET)
+    crypto = Crypto()
 
-    encrypted_message = security.encrypt_text(message)
-    decrypted_message = security.decrypt_text_by_token(encrypted_message)
-  
+    encrypted_message = crypto.encrypt_as_text(message)
+    decrypted_message = crypto.decrypt_as_text(encrypted_message)
+
     assert decrypted_message == message
 
 @pytest.mark.parametrize("message", ["firstname.name@domain.com"])
 def test_encrypt_and_decrypt_email_address(monkeypatch, message):
-    monkeypatch.setenv("ENCRYPTION_FERNET_KEY", FERNET_KEY)
+    monkeypatch.setenv("AES_SECRET", AES_SECRET)
+    crypto = Crypto()
 
-    encrypted_message = security.encrypt_text(message)
-    decrypted_message = security.decrypt_text_by_token(encrypted_message)
+    encrypted_message = crypto.encrypt_as_text(message)
+    decrypted_message = crypto.decrypt_as_text(encrypted_message)
 
     assert decrypted_message == message
 
+@pytest.mark.parametrize("ip_address, blocking_reason", [("155.255.452.55", BlockedIpReasonType.EXCESSIVE_FAILED_LOGIN_ATTEMPTS)])
+def test_block_ip_address(ip_address: str, blocking_reason: BlockedIpReasonType):
+    ipSecurity = IPSecurity()
+
+    assert ipSecurity.block_ip(ip_address, blocking_reason) is True
+    assert ipSecurity.is_ip_blocked(ip_address) is True
+    assert ipSecurity.unblock_ip(ip_address) is True
+    assert ipSecurity.is_ip_blocked(ip_address) is False
