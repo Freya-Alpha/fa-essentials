@@ -80,5 +80,5 @@ def test_get_redis_cluster_service_name_with_env(monkeypatch):
 
 def test_get_redis_cluster_service_name_default(monkeypatch):
     monkeypatch.delenv("REDIS_CLUSTER_NODES", raising=False)
-    expected_result = ["redis-cluster-leader", "6379"]
+    expected_result = ["uat.redis.fa.sahri.local", "6379"]
     assert utils.get_redis_cluster_service_name() == expected_result
