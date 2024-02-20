@@ -97,8 +97,11 @@ def get_redis_cluster_service_name():
     For PROD/UAT the Kubernetes Service will route the requests to any of the leaders,
     summarized by redis-cluster-leader
     """
-    nodes_env = os.getenv("REDIS_CLUSTER_NODES", "redis-cluster-leader:6379")
+    nodes_env = os.getenv("REDIS_CLUSTER_NODES", "uat.redis.fa.sahri.local:6379")
     return nodes_env.split(":")
+
+def get_redis_cluster_pw():
+    return os.getenv("REDIS_CLUSTER_PW")
 
 def get_redis_cluster_client() -> RedisCluster:
     """Creates a redis client to access the redis cluster in the current environment.
@@ -131,11 +134,23 @@ def get_redis_cluster_client() -> RedisCluster:
         if not host_name:
             raise Exception("No Redis cluster nodes in app_config file.")
             # TODO add the error log as soon this common code is in the library.
-        rc = RedisCluster(
-            host=host_name,
-            port=int(port),
-            decode_responses=True,
-            # skip_full_coverage_check=True,
-        )
+
+        PW = get_redis_cluster_pw()
+        if isinstance(PW, str):
+            CON_ARGS = {
+                "username": "default",
+                "password": PW
+            }
+
+            rc = RedisCluster(
+                host=host_name,
+                port=int(port),
+                decode_responses=True,
+                require_full_coverage=False,
+                read_from_replicas=True,
+                **CON_ARGS
+            )
+        else: 
+            raise ValueError("There is NO password or the Redis Cluster available. Please see to it.")
 
     return rc
