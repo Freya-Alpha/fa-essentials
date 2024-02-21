@@ -8,5 +8,5 @@ cryptography
 email-validator
 ipaddress
 #C:/Users/mcaba/source/repos/Freya Alpha/fa-models
-famodels
+fa-models
 redis-om

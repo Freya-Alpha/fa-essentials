@@ -13,8 +13,10 @@ def test_get_project_root(mock_project_root):
     expected_path = str(mock_project_root)
     assert utils.get_project_root() == expected_path
 
+
 def test_get_project_root_path(mock_project_root):
     assert utils.get_project_root_path() == mock_project_root
+
 
 def test_get_app_config(monkeypatch, tmp_path):
     # Create a temporary config directory
@@ -36,7 +38,7 @@ def test_get_app_config(monkeypatch, tmp_path):
     def mock_find_project_root(*args, **kwargs):
         return tmp_path
 
-    monkeypatch.setattr(utils, "find_project_root", mock_find_  project_root)
+    monkeypatch.setattr(utils, "find_project_root", mock_find_project_root)
 
     # Run the test
     assert utils.get_app_config() == expected_config
