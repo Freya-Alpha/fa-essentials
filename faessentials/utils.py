@@ -149,6 +149,6 @@ def get_redis_cluster_client() -> RedisCluster:
                 read_from_replicas=True
             )
         else:
-            raise ValueError("There is NO password or the Redis Cluster available. Please see to it.")
+            raise ValueError("There is NO password for the Redis Cluster available with this deployment. Please see to it.")
 
     return rc
