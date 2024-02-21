@@ -83,7 +83,7 @@ def test_get_redis_cluster_service_name_default(monkeypatch):
     expected_result = ["uat.redis.fa.sahri.local", "6379"]
     assert utils.get_redis_cluster_service_name() == expected_result
 
-#@pytest.mark.skipif(os.environ.get("ENV") != "DEV", reason="Requires DEV environment with a local Redis cluster")
+@pytest.mark.skipif(os.environ.get("GITHUB_ACTIONS") == "true", reason="Requires DEV environment with a local Redis cluster and should not run on GitHub Actions")
 def test_get_redis_cluster_client_add_method():
     # Obtain the RedisCluster client
     rc = utils.get_redis_cluster_client()
