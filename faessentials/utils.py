@@ -123,6 +123,8 @@ def get_redis_cluster_client() -> RedisCluster:
 
         # rc = RedisCluster(startup_nodes=nodes, decode_responses=True, skip_full_coverage_check=True)
         rc = RedisCluster(
+            username='default',
+            password='my-password',
             startup_nodes=nodes,
             decode_responses=True,
             skip_full_coverage_check=True,
@@ -137,20 +139,16 @@ def get_redis_cluster_client() -> RedisCluster:
 
         PW = get_redis_cluster_pw()
         if isinstance(PW, str):
-            CON_ARGS = {
-                "username": "default",
-                "password": PW
-            }
-
             rc = RedisCluster(
                 host=host_name,
                 port=int(port),
+                username='default',
+                password=PW,
                 decode_responses=True,
                 require_full_coverage=False,
-                read_from_replicas=True,
-                **CON_ARGS
+                read_from_replicas=True
             )
-        else: 
+        else:
             raise ValueError("There is NO password or the Redis Cluster available. Please see to it.")
 
     return rc

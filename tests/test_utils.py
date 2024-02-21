@@ -1,4 +1,4 @@
-from pathlib import Path
+import os
 import pytest
 import yaml
 from faessentials import utils
@@ -82,3 +82,22 @@ def test_get_redis_cluster_service_name_default(monkeypatch):
     monkeypatch.delenv("REDIS_CLUSTER_NODES", raising=False)
     expected_result = ["uat.redis.fa.sahri.local", "6379"]
     assert utils.get_redis_cluster_service_name() == expected_result
+
+#@pytest.mark.skipif(os.environ.get("ENV") != "DEV", reason="Requires DEV environment with a local Redis cluster")
+def test_get_redis_cluster_client_add_method():
+    # Obtain the RedisCluster client
+    rc = utils.get_redis_cluster_client()
+
+    # Perform a test operation - add a key with a value
+    test_key = "test_key"
+    test_value = "test_value"
+    rc.set(test_key, test_value)
+
+    # Retrieve the value to verify the operation
+    value = rc.get(test_key)
+
+    # Clean up by deleting the test key
+    rc.delete(test_key)
+
+    # Assert that the retrieved value matches the test value
+    assert value == test_value
