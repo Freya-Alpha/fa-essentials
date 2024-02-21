@@ -9,3 +9,4 @@ email-validator
 ipaddress
 C:/Users/mcaba/source/repos/Freya Alpha/fa-models
 redis-om
+fakeredis[json]
