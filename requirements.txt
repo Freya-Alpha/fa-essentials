@@ -7,5 +7,6 @@ pyyaml
 cryptography  
 email-validator
 ipaddress
-C:/Users/mcaba/source/repos/Freya Alpha/fa-models
+#C:/Users/mcaba/source/repos/Freya Alpha/fa-models
+famodels
 redis-om
