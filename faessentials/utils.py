@@ -21,7 +21,11 @@ def find_project_root(current_path: pathlib.Path, max_depth: int = 10) -> pathli
         if (current_path.cwd() / "config").exists() or (current_path.cwd() / "logs").exists():
             return current_path.cwd()
         current_path = current_path.parent
-    raise FileNotFoundError(f"Could not find the project root. Ensure the 'config' or 'logs' folder exists in {str(current_path)}. The PROJECT_ROOT environement variable is: {project_root_env}")
+    raise FileNotFoundError(f"Could not find the project root within the provided path {current_path} \
+                            with the max depth of {max_depth}. \
+                            The current path is {current_path.cwd()}. \
+                            Ensure the 'config' or 'logs' folder exists in {str(current_path)}. \
+                            The PROJECT_ROOT environement variable is: {project_root_env}")
 
 
 # Initialize PROJECT_ROOT when the module is loaded
