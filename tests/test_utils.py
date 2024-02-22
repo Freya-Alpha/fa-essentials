@@ -1,4 +1,5 @@
 import os
+import pathlib
 import pytest
 import yaml
 from faessentials import utils
@@ -42,6 +43,14 @@ def test_get_app_config(monkeypatch, tmp_path):
 
     # Run the test
     assert utils.get_app_config() == expected_config
+
+def test_find_project_root():
+    try:        
+        project_root = utils.find_project_root(pathlib.Path(__file__).resolve())
+        print(project_root)
+    except Exception as e:
+        # If any exception is caught, fail the test explicitly.
+        assert False, f"An exception was thrown: {e}"
 
 def test_get_application_name_success(monkeypatch):
     def mock_get_app_config():
