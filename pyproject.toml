@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fa-essentials"
-version = "1.0.109"
+version = "1.0.110"
 description = "Essentials for our projects."
 readme = "README.md"
 authors = [{ name = "Brayan", email = "brayan@sparkandhale.com" }]
@@ -29,7 +29,7 @@ dev = ["black", "bumpver", "isort", "pip-tools", "pytest"]
 Homepage = "https://github.com/svabra/fa-essentials"
 
 [tool.bumpver]
-current_version = "1.0.109"
+current_version = "1.0.110"
 version_pattern = "MAJOR.MINOR.PATCH"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true
