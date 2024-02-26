@@ -95,11 +95,7 @@ def get_logging_level() -> str:
     return get_app_config().get("logging_level", os.getenv("LOGGING_LEVEL", "DEBUG")).upper()
 
 def get_redis_cluster_service_name():
-    """Reads one service name and one port from the environemnt variable.
-    For all environements BUT the DEV environment.
-    For PROD/UAT the Kubernetes Service will route the requests to any of the leaders,
-    summarized by redis-cluster-leader
-    """
+    """Fetch the redis cluster service: FQDN and port. """
     if get_environment().upper() == "DEV" or get_environment().upper() is None:
         nodes_env = "UNDEFINED - EMPLOYING LOCAL CLUSTER"
     else:
