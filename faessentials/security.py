@@ -78,7 +78,7 @@ class IPSecurity():
         """Will try to fetch a blocked ip record in the database by the provided ip address """
         blockedIp: BlockedIp = None
         blockedIP_json = self.__get_blocked_ip_from_database(ip_address)
-        if (blockedIP_json):
+        if blockedIP_json:
             blockedIp_dict = json.loads(blockedIP_json)
             blockedIp = BlockedIp(**blockedIp_dict)
 
@@ -87,18 +87,23 @@ class IPSecurity():
     def is_ip_blocked(self, ip_address: str) -> bool:
         """Will try to determine if provided ip address is in the blocked ip list"""
         blockedIP_json = self.__get_blocked_ip_from_database(ip_address)
-        if (blockedIP_json):
-            return True
-
-        return False
+        return True if blockedIP_json is not None else False
 
     def block_ip(self, ip_address: str, blocking_reason: BlockedIpReasonType) -> bool:
+        if self.is_ip_blocked(ip_address):
+            return True
+
         blockedIp = BlockedIp(ip_address=ip_address, blocking_reason=blocking_reason)
         blockedIpJsonModel = blockedIp.model_dump_json()
 
         self.logger.debug(f"About to block ip address '{ip_address}' due to {blocking_reason}")
-        return self.rc.execute_command("JSON.SET", f"{self.db_path}:blocked-ip:{ip_address}", ".", blockedIpJsonModel)
+        response = self.rc.execute_command("JSON.SET", f"{self.db_path}:{ip_address}", ".", blockedIpJsonModel)
+        return True if response == 'OK' else False
 
     def unblock_ip(self, ip_address) -> bool:
         self.logger.debug(f"About to unblock ip address '{ip_address}'")
-        return self.rc.execute_command("JSON.DEL", f"{self.db_path}:blocked-ip:{ip_address}", ".")
+        if self.is_ip_blocked(ip_address) is False:
+            raise NotFoundError()
+
+        response = self.rc.execute_command("JSON.DEL", f"{self.db_path}:{ip_address}")
+        return True if response > 0 else False
