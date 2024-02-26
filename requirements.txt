@@ -1,7 +1,6 @@
 wheel
 setuptools
 twine
-pytest
 redis[hiredis]
 pyyaml 
 cryptography  

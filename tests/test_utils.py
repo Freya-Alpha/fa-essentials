@@ -82,14 +82,21 @@ def test_get_domain_name_failure(monkeypatch):
     with pytest.raises(ValueError):
         utils.get_domain_name()
 
-def test_get_redis_cluster_service_name_with_env(monkeypatch):
+def test_get_redis_cluster_service_name_with_env_in_dev(monkeypatch):
     monkeypatch.setenv("REDIS_CLUSTER_NODES", "redis-node1:1234")
+    monkeypatch.setenv("ENV", "DEV")
+    expected_result = ["UNDEFINED - EMPLOYING LOCAL CLUSTER"]
+    assert utils.get_redis_cluster_service_name() == expected_result
+
+def test_get_redis_cluster_service_name_with_env_in_prod(monkeypatch):
+    monkeypatch.setenv("REDIS_CLUSTER_NODES", "redis-node1:1234")
+    monkeypatch.setenv("ENV", "PROD")
     expected_result = ["redis-node1", "1234"]
     assert utils.get_redis_cluster_service_name() == expected_result
 
 def test_get_redis_cluster_service_name_default(monkeypatch):
     monkeypatch.delenv("REDIS_CLUSTER_NODES", raising=False)
-    expected_result = ["uat.redis.fa.sahri.local", "6379"]
+    expected_result = ["UNDEFINED - EMPLOYING LOCAL CLUSTER"]
     assert utils.get_redis_cluster_service_name() == expected_result
 
 @pytest.mark.skipif(os.environ.get("GITHUB_ACTIONS") == "true", reason="Requires DEV environment with a local Redis cluster and should not run on GitHub Actions")

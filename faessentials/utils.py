@@ -91,7 +91,6 @@ def get_service_doc_url() -> str:
     """Return the OpenAPI url"""
     return f"{get_service_url}/docs"
 
-
 def get_logging_level() -> str:
     return get_app_config().get("logging_level", os.getenv("LOGGING_LEVEL", "DEBUG")).upper()
 
@@ -101,7 +100,10 @@ def get_redis_cluster_service_name():
     For PROD/UAT the Kubernetes Service will route the requests to any of the leaders,
     summarized by redis-cluster-leader
     """
-    nodes_env = os.getenv("REDIS_CLUSTER_NODES", "uat.redis.fa.sahri.local:6379")
+    if get_environment().upper() == "DEV" or get_environment().upper() is None:
+        nodes_env = "UNDEFINED - EMPLOYING LOCAL CLUSTER"
+    else:
+        nodes_env = os.getenv("REDIS_CLUSTER_NODES", "NODES_NOT_DEFINED")
     return nodes_env.split(":")
 
 def get_redis_cluster_pw():
