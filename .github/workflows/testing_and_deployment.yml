@@ -27,16 +27,38 @@ jobs:
         python -m pip install --upgrade pip          
         pip install pytest redis
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Install Docker Compose
-      run: sudo curl -L "https://github.com/docker/compose/releases/download/v2.2.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose
-    - name: List repository contents
-      run: ls -la    
+    # - name: Install Docker Compose
+    #   run: sudo curl -L "https://github.com/docker/compose/releases/download/v2.2.3/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose
     - name: Start Redis Cluster
-      run: docker-compose -f tests/docker-compose.yaml up -d
-    - name: Create necessary directories for the tests
+      run: docker-compose -f tests/docker-compose.yaml up -d    
+    - name: List running containers
+      run: docker ps
+    - name: Initiate the Cluster
+      run: echo "yes" | docker exec -i leader_1 redis-cli --cluster create 172.30.0.11:6379 172.30.0.12:6379 172.30.0.13:6379 --cluster-replicas 0
+    
+    # - name: Wait for Redis to be ready
+    #   run: |
+    #     for service in leader_1 leader_2 leader_3; do
+    #         while [ "$(docker inspect -f '{{.State.Health.Status}}' $service)" != "healthy" ]; do
+    #             echo "Waiting for $service..."
+    #             sleep 5
+    #         done
+    #     done
+    
+    - name: Set Project Root Environment Variable for the tests
+      run: echo "PROJECT_ROOT=$(pwd)" >> $GITHUB_ENV    
+    - name: Create required Directories and print Directory
       run: |
-        mkdir -p config
-        mkdir -p logs
+        mkdir -p config logs
+        echo "Directories created in:"
+        pwd
+        ls -l  # Optional: List files and directories to show 'config' and 'logs'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip          
+        pip install pytest
+        if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi    
+
     - name: Running all PyTests
       run: |
         pytest -s -vv
