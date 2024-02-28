@@ -10,5 +10,9 @@
     "[python]": {
         "editor.defaultFormatter": "ms-python.autopep8"
     },
-    "python.formatting.provider": "none"
+    "python.formatting.provider": "none",
+    // The path to the project root can be overwritten here.
+    "terminal.integrated.env.windows": {
+        "PROJECT_ROOT": "C:\\Users\\mcaba\\source\\repos\\Freya Alpha\\fa-essentials"
+    }
 }

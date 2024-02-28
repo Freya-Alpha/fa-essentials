@@ -62,7 +62,7 @@ class Crypto:
 class IPSecurity():
     def __init__(self):
         self.rc = utils.get_redis_cluster_client()
-        self.db_path = f"{utils.get_domain_name()}:blocked-ip"
+        self.db_path = "fa-tech-operations:blocked-ip"
         self.logger = global_logger.setup_custom_logger("app")
 
     def __get_blocked_ip_from_database(self, ip_address: str) -> str:
