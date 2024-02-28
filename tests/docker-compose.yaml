@@ -1,5 +1,6 @@
 version: '3.8'
-name: 'redis-cluster-local'
+#name: 'redis-cluster-local'
+#name attribute not allowed on Linux.
 services:
   node1:
     container_name: leader_1
@@ -78,21 +79,6 @@ services:
     networks:
       network_redis_cluster:
         ipv4_address: 172.30.0.13
-
-  # redisinsight:
-  #   container_name: redisinsight
-  #   image: oblakstudio/redisinsight:2.4.4
-  #   ports:
-  #     - "8001:5000"
-  #   depends_on:
-  #     - node1
-  #     - node2
-  #     - node3
-  #   environment:
-  #     - ALLOW_EMPTY_PASSWORD=yes
-  #   networks:
-  #     network_redis_cluster:
-  #       ipv4_address: 172.30.0.14
 
 networks:
   network_redis_cluster:
