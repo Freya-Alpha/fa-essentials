@@ -34,7 +34,7 @@ jobs:
     - name: List running containers
       run: docker ps
     - name: Initiate the Cluster
-      run: echo "yes" | docker exec -i leader_1 redis-cli --cluster create 172.30.0.11:6379 172.30.0.12:6379 172.30.0.13:6379 --cluster-replicas 0
+      run: echo "yes" | docker exec -i leader_1 redis-cli -a my-password --cluster create 172.30.0.11:6379 172.30.0.12:6379 172.30.0.13:6379 --cluster-replicas 0
     
     # - name: Wait for Redis to be ready
     #   run: |
