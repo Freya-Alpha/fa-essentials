@@ -71,7 +71,7 @@ class GroupCreationResponseError(ResponseError):
         self.message = message
         super().__init__(message)
 
-def ensure_consumer_group(stream_key, group_name, start_reading_pos='>'):
+def ensure_consumer_group(stream_key, group_name, start_reading_pos='$'):
     """Ensure the consumer group is created and allows the group to start reading from the current position. Set start_reading_pos to 0 to start consuming form the very first entry."""
     rc = get_redis_cluster_client()
     try:
@@ -81,7 +81,7 @@ def ensure_consumer_group(stream_key, group_name, start_reading_pos='>'):
     except ResponseError as e:
         if "BUSYGROUP Consumer Group name already exists" not in str(e):
             raise GroupCreationResponseError(
-                f"Failed to create consumer group for stream {stream_key} and group {group_name}: {e}"
+                f"Failed to create consumer group for stream {stream_key} and group {group_name}. {e}"
             )
     except (redis.exceptions.ConnectionError, ConnectionRefusedError) as con_error:
         raise ConnectionError(
