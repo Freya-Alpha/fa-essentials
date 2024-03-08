@@ -27,6 +27,11 @@ services:
     networks:
       network_redis_cluster:
         ipv4_address: 172.30.0.11
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   node2:
     container_name: leader_2
@@ -53,6 +58,11 @@ services:
     networks:
       network_redis_cluster:
         ipv4_address: 172.30.0.12
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   node3:
     container_name: leader_3
@@ -79,6 +89,11 @@ services:
     networks:
       network_redis_cluster:
         ipv4_address: 172.30.0.13
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 networks:
   network_redis_cluster:

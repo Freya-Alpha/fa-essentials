@@ -33,6 +33,14 @@ jobs:
       run: docker-compose -f tests/docker-compose.yaml up -d    
     - name: List running containers
       run: docker ps
+    - name: Wait for Redis to be ready
+      run: |
+        for service in leader_1 leader_2 leader_3; do
+            while [ "$(docker inspect -f '{{.State.Health.Status}}' $service)" != "healthy" ]; do
+                echo "Waiting for $service..."
+                sleep 5
+            done
+        done
     - name: Initiate the Cluster
       run: echo "yes" | docker exec -i leader_1 redis-cli -a my-password --cluster create 172.30.0.11:6379 172.30.0.12:6379 172.30.0.13:6379 --cluster-replicas 0
     
