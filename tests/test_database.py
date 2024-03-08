@@ -17,7 +17,7 @@ def test_create_group_success(mock_get_redis_cluster_client, mock_redis_client):
 
     # Assert that xgroup_create method is called with expected arguments
     mock_redis_client.xgroup_create.assert_called_once_with(
-        name='stream_key', groupname='group_name', id='>', mkstream=True
+        name='stream_key', groupname='group_name', id='$', mkstream=True
     )
 
 @patch('faessentials.database.get_redis_cluster_client')
