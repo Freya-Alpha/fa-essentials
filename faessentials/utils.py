@@ -95,7 +95,7 @@ def get_service_doc_url() -> str:
 def get_logging_level() -> str:
     return get_app_config().get("logging_level", os.getenv("LOGGING_LEVEL", "DEBUG")).upper()
 
-deprecated(reason="Depreacted. Please use the same method of the module database.")
+@deprecated(reason="Depreacted. Please use the same method of the module database.")
 def get_redis_cluster_service_name():
     """Fetch the redis cluster service: FQDN and port. """
     if get_environment().upper() == "DEV" or get_environment().upper() is None:
@@ -104,11 +104,11 @@ def get_redis_cluster_service_name():
         nodes_env = os.getenv("REDIS_CLUSTER_NODES", "NODES_NOT_DEFINED")
     return nodes_env.split(":")
 
-deprecated(reason="Depreacted. Please use the same method of the module database.")
+@deprecated(reason="Depreacted. Please use the same method of the module database.")
 def get_redis_cluster_pw():
     return os.getenv("REDIS_CLUSTER_PW")
 
-deprecated(reason="Depreacted. Please use the same method of the module database.")
+@deprecated(reason="Depreacted. Please use the same method of the module database.")
 def get_redis_cluster_client() -> RedisCluster:
     """Creates a redis client to access the redis cluster in the current environment.
     That could be PROD, UAT or DEV."""

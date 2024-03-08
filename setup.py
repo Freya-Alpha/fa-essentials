@@ -14,7 +14,6 @@ setup(
     ),
     # packages=['faessentials'],
     # package_dir={'faessentials':'src'}
-    # packages=find_packages(),
     # version='0.1.0',
     # description='The library describes the most common models used in trading systems.',
     # author='Brayan Svan',
