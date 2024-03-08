@@ -7,8 +7,11 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.backends import default_backend
 from famodels.blocked_ip import BlockedIp, BlockedIpReasonType
-from redis_om.model.model import NotFoundError
 from faessentials import global_logger, utils
+
+class NotFoundError(Exception):
+    """Exception raised when a resource is not found."""
+    pass
 
 def get_secret_key() -> str:
     """Returns the general encryption key to encrypt data."""

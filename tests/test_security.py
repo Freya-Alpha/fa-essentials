@@ -1,7 +1,6 @@
 import pytest
-from faessentials.security import Crypto, IPSecurity
+from faessentials.security import Crypto, IPSecurity, NotFoundError
 from famodels.blocked_ip import BlockedIpReasonType
-from redis_om.model.model import NotFoundError
 
 AES_SECRET = "ZufDdKmoYgBv272G0DQWqz8Ng9ewM+IMGIMzkRQUoVNujiCHfdD4EULwXtn5fvwL"
 
