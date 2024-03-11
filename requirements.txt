@@ -6,6 +6,7 @@ pyyaml
 cryptography  
 email-validator
 ipaddress
-#C:/Users/mcaba/source/repos/Freya Alpha/fa-models
 fa-models
+redis-om
+fastapi
 deprecated
