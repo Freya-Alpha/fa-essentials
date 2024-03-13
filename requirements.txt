@@ -7,6 +7,5 @@ cryptography
 email-validator
 ipaddress
 fa-models
-redis-om
 fastapi
 deprecated
