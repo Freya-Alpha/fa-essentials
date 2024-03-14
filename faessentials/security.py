@@ -1,17 +1,18 @@
+import os
+import ipaddress
+import uuid
 import base64
 import json
-import os
-from faessentials.constants import DEFAULT_ENCODING
 from builtins import bytes
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.backends import default_backend
-from famodels.blocked_ip import BlockedIp, BlockedIpReasonType
+from datetime import datetime
+from enum import Enum
+from faessentials.constants import DEFAULT_ENCODING
 from faessentials import global_logger, utils
-
-class NotFoundError(Exception):
-    """Exception raised when a resource is not found."""
-    pass
+from fastapi import HTTPException, Request
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 def get_secret_key() -> str:
     """Returns the general encryption key to encrypt data."""
@@ -34,6 +35,29 @@ def get_AES_secret() -> bytes:
         raise ValueError("AES_SECRET environment variable is not set or empty.")
     return aes_secret
 
+class BlockedIpReasonType(str, Enum):
+    ATTEMPTING_MULTIPLE_LOGINS = "Attempting multiple logins"
+    EXCESSIVE_FAILED_LOGIN_ATTEMPTS = "Excessive failed login attempts"
+    EXCESSIVE_REQUESTS_WITHIN_SHORT_TIME_PERIOD = "Excessive requests within short time period"
+    IP_SPOOFING = "IP spoofing"
+    MALWARE = "Malware"
+    BLACKLISTED_IP_ADDRESS = "Blacklisted IP address"
+    REPEATED_ERROR_RESPONSE_CODES = "Repeated error response codes"
+    SUSPICIOUS_OPERATIONS = "Suspicious operations"
+    INAPPROPRIATE_WEBSITE = "Inappropriate website"
+    RULE_VIOLATION = "Rule violation"
+
+class BlockedIp(BaseModel):
+    model_config = ConfigDict(coerce_numbers_to_str=True)
+
+    id: str = Field(default=str(uuid.uuid4()))
+    ip_address: ipaddress.IPv4Address = Field(..., strip_withspace=True)
+    blocking_reason: BlockedIpReasonType = Field(...)
+    timestamp: datetime = Field(default_factory=datetime.now)
+
+    @field_validator('ip_address')
+    def val_ip_address(cls, v: ipaddress.IPv4Address) -> ipaddress.IPv4Address:
+        return str.strip(v.compressed)
 
 class Crypto:
     def __init__(self):
@@ -62,6 +86,14 @@ class Crypto:
     def decrypt_as_text(self, value) -> str:
         return str(self.decrypt(value), encoding=DEFAULT_ENCODING)
 
+class IPSecurityMiddleware:
+    def __init__(self):
+        self.ip_security = IPSecurity()
+
+    async def __call__(self, request: Request):
+        if self.ip_security.is_ip_blocked(request.client.host):
+            raise HTTPException(status_code=403, detail="Your ip address has been blocked.")
+
 class IPSecurity():
     def __init__(self):
         self.rc = utils.get_redis_cluster_client()
@@ -72,7 +104,7 @@ class IPSecurity():
         blockedIP_json: str = None
         try:
             blockedIP_json = self.rc.execute_command("JSON.GET", f"{self.db_path}:{ip_address}")
-        except NotFoundError:
+        except Exception:
             self.logger.info(f"There is no blocked ip with address {ip_address} in the database.")
 
         return blockedIP_json
@@ -106,7 +138,7 @@ class IPSecurity():
     def unblock_ip(self, ip_address) -> bool:
         self.logger.debug(f"About to unblock ip address '{ip_address}'")
         if self.is_ip_blocked(ip_address) is False:
-            raise NotFoundError()
+            raise Exception("The provided ip address cannot be found in the database. Unblocking failed.")
 
         response = self.rc.execute_command("JSON.DEL", f"{self.db_path}:{ip_address}")
         return True if response > 0 else False

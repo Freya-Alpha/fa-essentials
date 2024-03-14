@@ -6,7 +6,7 @@ pyyaml
 cryptography  
 email-validator
 ipaddress
-#C:/Users/mcaba/source/repos/Freya Alpha/fa-models
 fa-models
+fastapi
 deprecated
 pytest

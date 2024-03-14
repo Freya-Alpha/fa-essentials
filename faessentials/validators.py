@@ -6,4 +6,3 @@ def validate_email(email: str):
 
 def validate_ip_address(ip_string: str):
     ipaddress.ip_address(ip_string)
-
