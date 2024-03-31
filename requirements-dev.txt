@@ -2,6 +2,9 @@ wheel
 setuptools
 twine
 redis[hiredis]
+# kafka-python
+confluent-kafka
+fastavro
 pyyaml 
 cryptography  
 email-validator
@@ -10,3 +13,4 @@ ipaddress
 fa-models
 deprecated
 pytest
+pytest-mock

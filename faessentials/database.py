@@ -1,14 +1,19 @@
 import os
+import socket
+from typing import List
 from redis import ResponseError
 import redis
 from redis.cluster import RedisCluster, ClusterNode
 from faessentials import utils
+# from kafka import KafkaProducer
+from confluent_kafka import Producer
+# import json
 
 
 def get_redis_cluster_service_name():
     """Fetch the redis cluster service: FQDN and port. """
     if utils.get_environment().upper() == "DEV" or utils.get_environment().upper() is None:
-        nodes_env = "UNDEFINED - EMPLOYING LOCAL CLUSTER"
+        nodes_env = "UNDEFINED - EMPLOYING LOCAL REDIS CLUSTER"
     else:
         nodes_env = os.getenv("REDIS_CLUSTER_NODES", "NODES_NOT_DEFINED")
     return nodes_env.split(":")
@@ -87,3 +92,20 @@ def ensure_consumer_group(stream_key, group_name, start_reading_pos='$'):
         raise ConnectionError(
             "Connection Error: Failed to connect to Redis."
         ) from con_error
+
+def get_kafka_cluster_brokers() -> List[str]:
+    """Fetch the kafka broker array. This should return an array with nodes and ports. e.g. ['localhost:9092', 'localhost:9093']"""
+    if utils.get_environment().upper() in ["DEV", None]:
+        brokers = 'localhost:9092,localhost:9093,localhost:9094'
+    else:
+        brokers = os.getenv("KAFKA_CLUSTER_BROKERS", "NODES_NOT_DEFINED")
+    print(brokers.split(","))
+    return brokers.split(",")
+
+def get_kafka_producer() -> Producer:
+    brokers: List[str] = get_kafka_cluster_brokers()
+    broker_str = ",".join(brokers)
+    # Create the Producer instance
+    producer: Producer = Producer({'bootstrap.servers': broker_str,
+                                  'client.id': socket.gethostname()})
+    return producer
