@@ -3,7 +3,8 @@ setuptools
 twine
 redis[hiredis]
 # kafka-python
-confluent-kafka
+aiokafka
+#confluent-kafka
 fastavro
 pyyaml 
 cryptography  

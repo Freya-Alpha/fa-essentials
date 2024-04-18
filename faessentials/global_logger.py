@@ -54,7 +54,7 @@ def setup_custom_logger(name):
             logger.info(f"Root {utils.get_project_root()}")
             logger.info(f"Log Path {utils.get_log_path()}")
             logger.info(f"Logging Level {utils.get_logging_level()}")
-            logger.info(f"Redis Cluster Service Name {utils.get_redis_cluster_service_name()}")
+            #logger.info(f"Redis Cluster Service Name {utils.get_redis_cluster_service_name()}")
 
         listener.start()
 
