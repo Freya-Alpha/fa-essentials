@@ -1,5 +1,5 @@
 import pytest
-from faessentials.asset_formatter import AssetFormatter, BinanceFormatter, BybitFormatter
+from tksessentials.asset_formatter import AssetFormatter, BinanceFormatter, BybitFormatter
 
 # Test unwrap_symbol
 def test_unwrap_symbol():

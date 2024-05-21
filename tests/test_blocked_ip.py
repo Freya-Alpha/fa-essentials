@@ -1,5 +1,5 @@
 import pytest
-from faessentials.security import BlockedIp, BlockedIpReasonType
+from tksessentials.security import BlockedIp, BlockedIpReasonType
 
 @pytest.mark.parametrize("ip_address, blocking_reason", [
     ("127.0.0.1", BlockedIpReasonType.ATTEMPTING_MULTIPLE_LOGINS),

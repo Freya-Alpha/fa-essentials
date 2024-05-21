@@ -2,7 +2,7 @@ import os
 import pathlib
 import pytest
 import yaml
-from faessentials import utils
+from tksessentials import utils
 
 @pytest.fixture
 def mock_project_root(monkeypatch, tmp_path):

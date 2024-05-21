@@ -1,6 +1,6 @@
 import pytest
-from faessentials.security import BlockedIpReasonType
-from faessentials.security import IPSecurity
+from tksessentials.security import BlockedIpReasonType
+from tksessentials.security import IPSecurity
 
 @pytest.mark.parametrize("ip_address, blocking_reason", [("155.255.152.55", BlockedIpReasonType.EXCESSIVE_FAILED_LOGIN_ATTEMPTS)])
 def test_block_ip_address(ip_address: str, blocking_reason: BlockedIpReasonType):

@@ -9,8 +9,8 @@ from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.backends import default_backend
 from datetime import datetime
 from enum import Enum
-from faessentials.constants import DEFAULT_ENCODING
-from faessentials import global_logger, utils
+from tksessentials.constants import DEFAULT_ENCODING
+from tksessentials import global_logger, utils
 from fastapi import HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 

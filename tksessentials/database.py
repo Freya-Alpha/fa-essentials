@@ -6,7 +6,7 @@ from typing import List
 from redis import ResponseError
 import redis
 from redis.cluster import RedisCluster, ClusterNode
-from faessentials import utils
+from tksessentials import utils
 from kafka import KafkaProducer
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 

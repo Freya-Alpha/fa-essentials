@@ -1,6 +1,6 @@
 from email_validator import EmailSyntaxError
 import pytest
-from faessentials import validators
+from tksessentials import validators
 
 @pytest.mark.parametrize("email", ["john.doe@gmail.com"])
 def test_email_address(email):
