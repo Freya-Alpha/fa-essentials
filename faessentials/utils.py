@@ -7,6 +7,7 @@ from redis.cluster import RedisCluster, ClusterNode
 
 PROJECT_ROOT = None
 
+
 # Determine the project root path when the module is loaded
 def find_project_root(current_path: pathlib.Path, max_depth: int = 10) -> pathlib.Path:
     """
@@ -26,7 +27,7 @@ def find_project_root(current_path: pathlib.Path, max_depth: int = 10) -> pathli
                             with the max depth of {max_depth}. \
                             The current path is {current_path.cwd()}. \
                             Ensure the 'config' or 'logs' folder exists in {str(current_path)}. \
-                            The PROJECT_ROOT environement variable is: {project_root_env}")
+                            The PROJECT_ROOT environment variable is: {project_root_env}")
 
 
 # Initialize PROJECT_ROOT when the module is loaded
@@ -34,7 +35,9 @@ def initialize_project_root():
     global PROJECT_ROOT
     PROJECT_ROOT = find_project_root(pathlib.Path(__file__).resolve())
 
+
 initialize_project_root()
+
 
 def get_project_root_path() -> Path:
     """
@@ -42,18 +45,22 @@ def get_project_root_path() -> Path:
     """
     return PROJECT_ROOT
 
+
 def get_project_root() -> str:
     str_path = str(PROJECT_ROOT)
     # print(f"utils.py: {str_path}")
     return str_path
 
+
 def get_log_path() -> Path:
     abs_path = get_project_root_path().joinpath("logs")
     return abs_path
 
+
 def get_secrets_path() -> Path:
     abs_path = get_project_root_path().joinpath("secrets")
     return abs_path
+
 
 def get_app_config() -> dict:
     app_cfg = None
@@ -68,11 +75,13 @@ def get_app_config() -> dict:
         )
     return app_cfg
 
+
 def get_application_name() -> str:
     app_name = get_app_config().get("application")
     if app_name is None:
         raise ValueError("Application name not found in app_config.")
     return app_name
+
 
 def get_domain_name() -> str:
     domain_name = get_app_config().get("domain")
@@ -80,22 +89,27 @@ def get_domain_name() -> str:
         raise ValueError("Domain name not found in app_config.")
     return domain_name
 
+
 def get_environment() -> str:
     """Will fetch the environment variable ENV. If not present it will fall back to DEV """
     return os.environ.get("ENV", "DEV")
+
 
 def get_service_url() -> str:
     """This own service url value. This global environment variable is usually used by consumers apps of this API."""
     return os.getenv("OPENAPI_SERVICE_URL", "http://localhost:8080")
 
+
 def get_service_doc_url() -> str:
     """Return the OpenAPI url"""
     return f"{get_service_url}/docs"
 
+
 def get_logging_level() -> str:
     return get_app_config().get("logging_level", os.getenv("LOGGING_LEVEL", "DEBUG")).upper()
 
-@deprecated(reason="Depreacted. Please use the same method of the module database.")
+
+@deprecated(reason="Deprecated. Please use the same method of the module database.")
 def get_redis_cluster_service_name():
     """Fetch the redis cluster service: FQDN and port. """
     if get_environment().upper() == "DEV" or get_environment().upper() is None:
@@ -104,11 +118,13 @@ def get_redis_cluster_service_name():
         nodes_env = os.getenv("REDIS_CLUSTER_NODES", "NODES_NOT_DEFINED")
     return nodes_env.split(":")
 
-@deprecated(reason="Depreacted. Please use the same method of the module database.")
+
+@deprecated(reason="Deprecated. Please use the same method of the module database.")
 def get_redis_cluster_pw():
     return os.getenv("REDIS_CLUSTER_PW")
 
-@deprecated(reason="Depreacted. Please use the same method of the module database.")
+
+@deprecated(reason="Deprecated. Please use the same method of the module database.")
 def get_redis_cluster_client() -> RedisCluster:
     """Creates a redis client to access the redis cluster in the current environment.
     That could be PROD, UAT or DEV."""
@@ -134,8 +150,7 @@ def get_redis_cluster_client() -> RedisCluster:
             startup_nodes=nodes,
             decode_responses=True,
             skip_full_coverage_check=True,
-            address_remap=address_remap,
-        )
+            address_remap=address_remap)
     else:
         # PROD/UAT (any non-DEV environment)
         host_name, port = get_redis_cluster_service_name()
@@ -155,6 +170,7 @@ def get_redis_cluster_client() -> RedisCluster:
                 read_from_replicas=True
             )
         else:
-            raise ValueError("There is NO password for the Redis Cluster available with this deployment. Please see to it.")
+            raise ValueError(
+                "There is NO password for the Redis Cluster available with this deployment. Please see to it.")
 
     return rc

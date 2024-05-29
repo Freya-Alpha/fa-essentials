@@ -2,9 +2,10 @@ import inspect
 import logging
 import queue
 import logging.handlers
-from . import utils
+from faessentials import utils
 
 loggers = {}
+
 
 def setup_custom_logger(name):
     global loggers

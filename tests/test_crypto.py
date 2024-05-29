@@ -1,5 +1,5 @@
 import pytest
-from tksessentials.security import Crypto
+from faessentials.security import Crypto
 
 AES_SECRET = "ZufDdKmoYgBv272G0DQWqz8Ng9ewM+IMGIMzkRQUoVNujiCHfdD4EULwXtn5fvwL"
 
