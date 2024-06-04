@@ -1,6 +1,7 @@
 import re
 from typing import Set
-from . import global_logger
+from faessentials import global_logger
+
 
 class AssetFormatter:
     def __init__(self, default_quote_asset: str = "USDT") -> None:

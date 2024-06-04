@@ -2,14 +2,12 @@ wheel
 setuptools
 twine
 redis[hiredis]
-# kafka-python
 aiokafka
-#confluent-kafka
 fastavro
-pyyaml 
-cryptography  
+pyyaml
+cryptography
 email-validator
 ipaddress
 fa-models
-fastapi
 deprecated
+httpx
