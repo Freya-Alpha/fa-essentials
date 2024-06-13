@@ -1,6 +1,6 @@
 import re
 from typing import Set
-from faessentials import global_logger
+from . import global_logger
 
 
 class AssetFormatter:

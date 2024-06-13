@@ -2,7 +2,7 @@ import inspect
 import logging
 import queue
 import logging.handlers
-from faessentials import utils
+from . import utils
 
 loggers = {}
 
@@ -35,7 +35,8 @@ def setup_custom_logger(name):
         stream_handler.setLevel(logging.DEBUG)
         stream_handler.setFormatter(formatter)
 
-        # the local logging is fine, but there sould be a Fluent Bit integration, which sends logs to the central LMM instance
+        # the local logging is fine, but there should be a Fluent Bit integration,
+        # which sends logs to the central LMM instance
         timerotating_handler = logging.handlers.TimedRotatingFileHandler(
             utils.get_log_path().joinpath("app_rolling.log"), when="D", backupCount=30
         )
@@ -46,7 +47,7 @@ def setup_custom_logger(name):
         )
 
         # Only print the following when instantiated by the main.py file - and not other files.
-        # This will ensure that the important project variables are printet on startup.
+        # This will ensure that the important project variables are printed on startup.
         current_stack = inspect.stack()
         if any("main.py" in frame.filename for frame in current_stack):
             # Print settings:
@@ -55,7 +56,6 @@ def setup_custom_logger(name):
             logger.info(f"Root {utils.get_project_root()}")
             logger.info(f"Log Path {utils.get_log_path()}")
             logger.info(f"Logging Level {utils.get_logging_level()}")
-            #logger.info(f"Redis Cluster Service Name {utils.get_redis_cluster_service_name()}")
 
         listener.start()
 

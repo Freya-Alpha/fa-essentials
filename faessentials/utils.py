@@ -1,9 +1,7 @@
 import os
 import pathlib
 from pathlib import Path
-from deprecated import deprecated
 import yaml
-from redis.cluster import RedisCluster, ClusterNode
 
 PROJECT_ROOT = None
 
@@ -108,69 +106,3 @@ def get_service_doc_url() -> str:
 def get_logging_level() -> str:
     return get_app_config().get("logging_level", os.getenv("LOGGING_LEVEL", "DEBUG")).upper()
 
-
-@deprecated(reason="Deprecated. Please use the same method of the module database.")
-def get_redis_cluster_service_name():
-    """Fetch the redis cluster service: FQDN and port. """
-    if get_environment().upper() == "DEV" or get_environment().upper() is None:
-        nodes_env = "UNDEFINED - EMPLOYING LOCAL CLUSTER"
-    else:
-        nodes_env = os.getenv("REDIS_CLUSTER_NODES", "NODES_NOT_DEFINED")
-    return nodes_env.split(":")
-
-
-@deprecated(reason="Deprecated. Please use the same method of the module database.")
-def get_redis_cluster_pw():
-    return os.getenv("REDIS_CLUSTER_PW")
-
-
-@deprecated(reason="Deprecated. Please use the same method of the module database.")
-def get_redis_cluster_client() -> RedisCluster:
-    """Creates a redis client to access the redis cluster in the current environment.
-    That could be PROD, UAT or DEV."""
-    rc: RedisCluster = None
-    if get_environment().upper() == "DEV":
-        REDIS_SERVICE = os.environ.get("REDIS_SERVICE", "127.0.0.1")
-        REDIS_PORTS = os.environ.get("REDIS_PORTS", "7000,7001,7002").split(",")
-        nodes = [ClusterNode(REDIS_SERVICE, int(port)) for port in REDIS_PORTS]
-        address_remap_dict = {
-            "172.30.0.11:6379": ("127.0.0.1", 7000),
-            "172.30.0.12:6379": ("127.0.0.1", 7001),
-            "172.30.0.13:6379": ("127.0.0.1", 7002),
-        }
-
-        def address_remap(address):
-            host, port = address
-            return address_remap_dict.get(f"{host}:{port}", address)
-
-        # rc = RedisCluster(startup_nodes=nodes, decode_responses=True, skip_full_coverage_check=True)
-        rc = RedisCluster(
-            username='default',
-            password='my-password',
-            startup_nodes=nodes,
-            decode_responses=True,
-            skip_full_coverage_check=True,
-            address_remap=address_remap)
-    else:
-        # PROD/UAT (any non-DEV environment)
-        host_name, port = get_redis_cluster_service_name()
-        if not host_name:
-            raise Exception("No Redis cluster nodes in app_config file.")
-            # TODO add the error log as soon this common code is in the library.
-
-        PW = get_redis_cluster_pw()
-        if isinstance(PW, str):
-            rc = RedisCluster(
-                host=host_name,
-                port=int(port),
-                username='default',
-                password=PW,
-                decode_responses=True,
-                require_full_coverage=False,
-                read_from_replicas=True
-            )
-        else:
-            raise ValueError(
-                "There is NO password for the Redis Cluster available with this deployment. Please see to it.")
-
-    return rc
