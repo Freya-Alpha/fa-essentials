@@ -6,7 +6,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-from constants import DEFAULT_ENCODING
+from .constants import DEFAULT_ENCODING
 
 
 def get_secret_key() -> str:
