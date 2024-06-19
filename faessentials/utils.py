@@ -2,11 +2,8 @@ import os
 import pathlib
 from pathlib import Path
 import yaml
-import global_logger
 
 PROJECT_ROOT = None
-
-logger = global_logger.setup_custom_logger("app")
 
 
 # Determine the project root path when the module is loaded
@@ -22,7 +19,6 @@ def find_project_root(current_path: pathlib.Path, max_depth: int = 10) -> pathli
     for _ in range(max_depth):
         if (current_path / "config").exists() or (current_path / "logs").exists():
             return current_path
-        logger.debug(f"Try to find project root in parent of current path: {current_path}")
         current_path = current_path.parent
     raise FileNotFoundError(f"Could not find the project root within the provided path {current_path} \
                             with the max depth of {max_depth}. \
@@ -66,7 +62,7 @@ def get_secrets_path() -> Path:
 def get_app_config() -> dict:
     app_cfg = None
     try:
-        project_root = find_project_root(pathlib.Path(__file__).resolve())
+        project_root = find_project_root(pathlib.Path(os.getcwd()).resolve())
         config_path = project_root.joinpath("config/app_config.yaml")
         with open(config_path, "r") as ymlfile:
             app_cfg = yaml.safe_load(ymlfile)
@@ -108,4 +104,3 @@ def get_service_doc_url() -> str:
 
 def get_logging_level() -> str:
     return get_app_config().get("logging_level", os.getenv("LOGGING_LEVEL", "DEBUG")).upper()
-

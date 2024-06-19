@@ -8,11 +8,11 @@ from typing import List
 import httpx
 import pydantic
 from aiokafka.errors import KafkaError
-from faessentials import utils, global_logger
-from faessentials.constants import DEFAULT_ENCODING, DEFAULT_CONNECTION_TIMEOUT
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 
-logger = global_logger.setup_custom_logger("app")
+import global_logger
+import utils
+from .constants import DEFAULT_ENCODING, DEFAULT_CONNECTION_TIMEOUT
 
 
 class KafkaKSqlDbEndPoint(str, Enum):
@@ -121,6 +121,8 @@ async def kafka_table_or_view_exists(name: str, connection_time_out: float = DEF
 
 async def kafka_execute_sql(sql: str, connection_time_out: float = DEFAULT_CONNECTION_TIMEOUT):
     """Executes the provided sql command."""
+    logger = global_logger.setup_custom_logger("app")
+
     ksql_url = get_ksqldb_url(KafkaKSqlDbEndPoint.KSQL)
     response = httpx.post(ksql_url, json={"ksql": sql}, timeout=connection_time_out)
 
@@ -135,12 +137,13 @@ async def kafka_send_message(topic_name: str,
                              value: any,
                              key: str or int = int(round(datetime.now().timestamp()))) -> None:
     """Will send the provided message to the specified Kafka topic."""
-    kc = get_kafka_producer()
+    logger = global_logger.setup_custom_logger("app")
+    kp = get_kafka_producer()
 
-    await kc.start()
+    await kp.start()
 
     try:
-        await kc.send_and_wait(topic=topic_name, key=key, value=value)
+        await kp.send_and_wait(topic=topic_name, key=key, value=value)
     except KafkaError as ke:
         error_message = f"""An error occurred when trying to send a message of type {type(object)} to the database. 
                         Error message: {ke}"""
@@ -155,4 +158,4 @@ async def kafka_send_message(topic_name: str,
         raise Exception(error_message)
     finally:
         # Wait for all pending messages to be delivered or expire.
-        await kc.stop()
+        await kp.stop()

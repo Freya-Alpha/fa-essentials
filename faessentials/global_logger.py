@@ -2,7 +2,7 @@ import inspect
 import logging
 import queue
 import logging.handlers
-from . import utils
+import utils
 
 loggers = {}
 
