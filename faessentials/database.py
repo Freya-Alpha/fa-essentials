@@ -9,10 +9,8 @@ import httpx
 import pydantic
 from aiokafka.errors import KafkaError
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
-
-import global_logger
-import utils
-from .constants import DEFAULT_ENCODING, DEFAULT_CONNECTION_TIMEOUT
+from faessentials import utils, global_logger
+from faessentials.constants import DEFAULT_ENCODING, DEFAULT_CONNECTION_TIMEOUT
 
 
 class KafkaKSqlDbEndPoint(str, Enum):

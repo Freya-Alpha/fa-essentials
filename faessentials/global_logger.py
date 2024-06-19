@@ -2,7 +2,7 @@ import inspect
 import logging
 import queue
 import logging.handlers
-import utils
+from faessentials import utils
 
 loggers = {}
 
