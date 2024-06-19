@@ -2,8 +2,11 @@ import os
 import pathlib
 from pathlib import Path
 import yaml
+import global_logger
 
 PROJECT_ROOT = None
+
+logger = global_logger.setup_custom_logger("app")
 
 
 # Determine the project root path when the module is loaded
@@ -11,7 +14,6 @@ def find_project_root(current_path: pathlib.Path, max_depth: int = 10) -> pathli
     """
     Recursively search for a marker (like the 'config' or 'logs' directory) to find the project root.
     """
-
     # Check if PROJECT_ROOT environment variable is set
     project_root_env = os.getenv('PROJECT_ROOT')
     if project_root_env:
@@ -20,6 +22,7 @@ def find_project_root(current_path: pathlib.Path, max_depth: int = 10) -> pathli
     for _ in range(max_depth):
         if (current_path / "config").exists() or (current_path / "logs").exists():
             return current_path
+        logger.debug(f"Try to find project root in parent of current path: {current_path}")
         current_path = current_path.parent
     raise FileNotFoundError(f"Could not find the project root within the provided path {current_path} \
                             with the max depth of {max_depth}. \
@@ -31,7 +34,7 @@ def find_project_root(current_path: pathlib.Path, max_depth: int = 10) -> pathli
 # Initialize PROJECT_ROOT when the module is loaded
 def initialize_project_root():
     global PROJECT_ROOT
-    PROJECT_ROOT = find_project_root(pathlib.Path(__file__).resolve())
+    PROJECT_ROOT = find_project_root(pathlib.Path(os.getcwd()).resolve())
 
 
 initialize_project_root()

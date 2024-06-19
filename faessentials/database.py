@@ -12,6 +12,8 @@ from faessentials import utils, global_logger
 from faessentials.constants import DEFAULT_ENCODING, DEFAULT_CONNECTION_TIMEOUT
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 
+logger = global_logger.setup_custom_logger("app")
+
 
 class KafkaKSqlDbEndPoint(str, Enum):
     KSQL = "ksql"
@@ -119,8 +121,6 @@ async def kafka_table_or_view_exists(name: str, connection_time_out: float = DEF
 
 async def kafka_execute_sql(sql: str, connection_time_out: float = DEFAULT_CONNECTION_TIMEOUT):
     """Executes the provided sql command."""
-    logger = global_logger.setup_custom_logger("app")
-
     ksql_url = get_ksqldb_url(KafkaKSqlDbEndPoint.KSQL)
     response = httpx.post(ksql_url, json={"ksql": sql}, timeout=connection_time_out)
 
@@ -135,7 +135,6 @@ async def kafka_send_message(topic_name: str,
                              value: any,
                              key: str or int = int(round(datetime.now().timestamp()))) -> None:
     """Will send the provided message to the specified Kafka topic."""
-    logger = global_logger.setup_custom_logger("app")
     kc = get_kafka_producer()
 
     await kc.start()
