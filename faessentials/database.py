@@ -30,7 +30,8 @@ def get_kafka_cluster_brokers() -> List[str]:
     if utils.get_environment().upper() in ["DEV", None]:
         brokers = 'localhost:9092,localhost:9093,localhost:9094'
     else:
-        brokers = os.getenv("KAFKA_CLUSTER_BROKERS", "NODES_NOT_DEFINED")
+        # the value of the KAFKA_BROKER_STRING is set by the global config map.
+        brokers = os.getenv("KAFKA_BROKER_STRING", "NODES_NOT_DEFINED")
     return brokers.split(",")
 
 
@@ -63,13 +64,15 @@ def get_kafka_producer() -> AIOKafkaProducer:
     return producer
 
 
-def get_ksqldb_url(kafka_ksqldb_endpoint: KafkaKSqlDbEndPoint = KafkaKSqlDbEndPoint.KSQL) -> str:
+def get_ksqldb_url(kafka_ksqldb_endpoint_literal: KafkaKSqlDbEndPoint = KafkaKSqlDbEndPoint.KSQL) -> str:
     if utils.get_environment().upper() in ["DEV", None]:
         ksqldb_nodes = ["localhost:8088"]
-        return f"http://{random.choice(ksqldb_nodes)}/{kafka_ksqldb_endpoint}"
+        return f"http://{random.choice(ksqldb_nodes)}/{kafka_ksqldb_endpoint_literal}"
     else:
         # TODO: THIS SHOULD BE FETCHED FROM THE GLOBAL CONFIG-MAP FOR FA.
-        return f"http://ksqldb.sahri.local/{kafka_ksqldb_endpoint}"
+        #return f"http://ksqldb.sahri.local/{kafka_ksqldb_endpoint}"
+        KSQLDB_STRING: str = os.getenv("KSQLDB_STRING", "NODES_NOT_DEFINED")
+        return f"{KSQLDB_STRING}/{kafka_ksqldb_endpoint_literal}"
 
 
 def get_kafka_consumer(topics: str, client: str = socket.gethostname(), consumer_group: str = None) -> AIOKafkaConsumer:
