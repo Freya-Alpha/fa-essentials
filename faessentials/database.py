@@ -2,7 +2,6 @@ import json
 import os
 import random
 import socket
-from datetime import datetime
 from enum import Enum
 from typing import List
 import httpx
@@ -136,12 +135,10 @@ async def execute_sql(sql: str, connection_time_out: float = DEFAULT_CONNECTION_
         raise Exception(f"Failed to execute SQL statement: {response.status_code}. SQL: {sql}")
 
 
-async def produce_message(topic_name: str,
-                             value: any,
-                             key: str or int = int(round(datetime.now().timestamp()))) -> None:
+async def produce_message(topic_name: str, key: str, value: any) -> None:
     """Will send the provided message to the specified Kafka topic."""
     logger = global_logger.setup_custom_logger("app")
-    kp = get_kafka_producer()
+    kp = await get_default_kafka_producer()
 
     await kp.start()
 
