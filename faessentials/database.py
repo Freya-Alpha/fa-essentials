@@ -136,7 +136,7 @@ async def execute_sql(sql: str, connection_time_out: float = DEFAULT_CONNECTION_
 
 
 async def produce_message(topic_name: str, key: str, value: any) -> None:
-    """Will send the provided message to the specified Kafka topic."""
+    """Will send the provided message to the specified Kafka topic and ends the producer when accomplished.."""
     logger = global_logger.setup_custom_logger("app")
     kp = await get_default_kafka_producer()
 
