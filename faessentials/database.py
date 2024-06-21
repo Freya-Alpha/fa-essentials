@@ -35,7 +35,7 @@ def get_kafka_cluster_brokers() -> List[str]:
     return brokers.split(",")
 
 
-def get_kafka_producer() -> AIOKafkaProducer:
+async def get_default_kafka_producer() -> AIOKafkaProducer:
     """ This default producer is expecting you to send json data, which it will then automatically
         serialize/encode with UTF-8.
         The key must be a posix timestamp (int in python, BIGINT in Kafka).
@@ -61,21 +61,12 @@ def get_kafka_producer() -> AIOKafkaProducer:
         bootstrap_servers=broker_str,
         key_serializer=lambda k: get_key_serializer(k),
         value_serializer=lambda v: get_value_serializer(v))
+    # start the producer for the client (it is often forgotten).
+    await producer.start()
     return producer
 
 
-def get_ksqldb_url(kafka_ksqldb_endpoint_literal: KafkaKSqlDbEndPoint = KafkaKSqlDbEndPoint.KSQL) -> str:
-    if utils.get_environment().upper() in ["DEV", None]:
-        ksqldb_nodes = ["localhost:8088"]
-        return f"http://{random.choice(ksqldb_nodes)}/{kafka_ksqldb_endpoint_literal}"
-    else:
-        # TODO: THIS SHOULD BE FETCHED FROM THE GLOBAL CONFIG-MAP FOR FA.
-        #return f"http://ksqldb.sahri.local/{kafka_ksqldb_endpoint}"
-        KSQLDB_STRING: str = os.getenv("KSQLDB_STRING", "NODES_NOT_DEFINED")
-        return f"{KSQLDB_STRING}/{kafka_ksqldb_endpoint_literal}"
-
-
-def get_kafka_consumer(topics: str, client: str = socket.gethostname(), consumer_group: str = None) -> AIOKafkaConsumer:
+async def get_default_kafka_consumer(topics: str, client: str = socket.gethostname(), consumer_group: str = None) -> AIOKafkaConsumer:
     """ Will return an async-capable consumer.
         However, you may create your own consumer with specific settings. This is only for convenience.
         The offset could be set to 'earliest'. Default is 'latest'.
@@ -89,6 +80,7 @@ def get_kafka_consumer(topics: str, client: str = socket.gethostname(), consumer
                                                   group_id=consumer_group,
                                                   key_deserializer=bytes_to_int_big_endian,
                                                   value_deserializer=lambda v: json.loads(v.decode(DEFAULT_ENCODING)))
+    await consumer.start()
     return consumer
 
 
@@ -101,9 +93,19 @@ def bytes_to_int_big_endian(key_bytes: bytes) -> int or None:
         # Handle cases where key_bytes is not 8 bytes as appropriate
         # This might include logging an error, raising an exception, or returning a default value
         return None  # Or your preferred way to handle this case
+    
+def get_ksqldb_url(kafka_ksqldb_endpoint_literal: KafkaKSqlDbEndPoint = KafkaKSqlDbEndPoint.KSQL) -> str:
+    if utils.get_environment().upper() in ["DEV", None]:
+        ksqldb_nodes = ["localhost:8088"]
+        return f"http://{random.choice(ksqldb_nodes)}/{kafka_ksqldb_endpoint_literal}"
+    else:
+        # TODO: THIS SHOULD BE FETCHED FROM THE GLOBAL CONFIG-MAP FOR FA.
+        #return f"http://ksqldb.sahri.local/{kafka_ksqldb_endpoint}"
+        KSQLDB_STRING: str = os.getenv("KSQLDB_STRING", "NODES_NOT_DEFINED")
+        return f"{KSQLDB_STRING}/{kafka_ksqldb_endpoint_literal}"
 
 
-async def kafka_table_or_view_exists(name: str, connection_time_out: float = DEFAULT_CONNECTION_TIMEOUT) -> bool:
+async def table_or_view_exists(name: str, connection_time_out: float = DEFAULT_CONNECTION_TIMEOUT) -> bool:
     """Checks, if the provided table or queryable already exists."""
     ksql_url = get_ksqldb_url(KafkaKSqlDbEndPoint.KSQL)
     response = httpx.post(ksql_url, json={"ksql": "LIST TABLES;"}, timeout=connection_time_out)
@@ -120,7 +122,7 @@ async def kafka_table_or_view_exists(name: str, connection_time_out: float = DEF
     return False
 
 
-async def kafka_execute_sql(sql: str, connection_time_out: float = DEFAULT_CONNECTION_TIMEOUT):
+async def execute_sql(sql: str, connection_time_out: float = DEFAULT_CONNECTION_TIMEOUT):
     """Executes the provided sql command."""
     logger = global_logger.setup_custom_logger("app")
 
@@ -134,7 +136,7 @@ async def kafka_execute_sql(sql: str, connection_time_out: float = DEFAULT_CONNE
         raise Exception(f"Failed to execute SQL statement: {response.status_code}. SQL: {sql}")
 
 
-async def kafka_send_message(topic_name: str,
+async def produce_message(topic_name: str,
                              value: any,
                              key: str or int = int(round(datetime.now().timestamp()))) -> None:
     """Will send the provided message to the specified Kafka topic."""
