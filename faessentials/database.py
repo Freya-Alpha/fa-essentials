@@ -158,4 +158,5 @@ async def produce_message(topic_name: str, key: str, value: any) -> None:
         raise Exception(error_message)
     finally:
         # Wait for all pending messages to be delivered or expire.
+        await kp.flush()
         await kp.stop()
