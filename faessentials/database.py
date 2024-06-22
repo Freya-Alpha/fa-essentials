@@ -50,11 +50,12 @@ async def get_default_kafka_producer() -> AIOKafkaProducer:
         else:
             return json.dumps(v).encode(DEFAULT_ENCODING)
 
-    def get_key_serializer(k: int or str) -> bytes:
-        if isinstance(k, str):
-            return k.encode(DEFAULT_ENCODING)
-        else:
-            return k.to_bytes(8, byteorder='big')
+    def get_key_serializer(k: str) -> bytes:
+        return k.encode(DEFAULT_ENCODING)
+        # if isinstance(k, str):
+        #     return k.encode(DEFAULT_ENCODING)
+        # else:
+        #     return k.to_bytes(8, byteorder='big')
 
     producer: AIOKafkaProducer = AIOKafkaProducer(
         bootstrap_servers=broker_str,
