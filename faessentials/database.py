@@ -27,7 +27,7 @@ def get_kafka_cluster_brokers() -> List[str]:
     """Fetch the kafka broker array. This should return an array with nodes and ports.
     e.g. ['localhost:9092', 'localhost:9093']"""
     if utils.get_environment().upper() in ["DEV", None]:
-        brokers = 'localhost:9092' #,localhost:9093,localhost:9094'
+        brokers = 'localhost:9092'  # ,localhost:9093,localhost:9094'
     else:
         # the value of the KAFKA_BROKER_STRING is set by the global config map.
         brokers = os.getenv("KAFKA_BROKER_STRING", "NODES_NOT_DEFINED")
@@ -93,7 +93,7 @@ def bytes_to_int_big_endian(key_bytes: bytes) -> int or None:
         # Handle cases where key_bytes is not 8 bytes as appropriate
         # This might include logging an error, raising an exception, or returning a default value
         return None  # Or your preferred way to handle this case
-    
+
 def get_ksqldb_url(kafka_ksqldb_endpoint_literal: KafkaKSqlDbEndPoint = KafkaKSqlDbEndPoint.KSQL) -> str:
     if utils.get_environment().upper() in ["DEV", None]:
         ksqldb_nodes = ["localhost:8088"]
