@@ -7,7 +7,6 @@ charset-normalizer==3.3.2
 colorama==0.4.6
 confluent-kafka==2.3.0
 cryptography==42.0.5
-Deprecated==1.2.14
 dnspython==2.6.1
 docutils==0.20.1
 email_validator==2.1.1
