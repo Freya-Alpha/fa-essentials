@@ -66,10 +66,11 @@ async def get_default_kafka_producer() -> AIOKafkaProducer:
     return producer
 
 
-async def get_default_kafka_consumer(topics: str, client: str = socket.gethostname(), consumer_group: str = None) -> AIOKafkaConsumer:
+async def get_default_kafka_consumer(topics: str, client: str = socket.gethostname(), consumer_group: str = None, auto_commit: bool = True) -> AIOKafkaConsumer:
     """ Will return an async-capable consumer.
         However, you may create your own consumer with specific settings. This is only for convenience.
         The offset could be set to 'earliest'. Default is 'latest'.
+        : param auto_commit (True): Set auto_commit to False to control the commits yourself.
     """
     brokers: List[str] = get_kafka_cluster_brokers()
     broker_str = ",".join(brokers)
@@ -79,7 +80,8 @@ async def get_default_kafka_consumer(topics: str, client: str = socket.gethostna
                                                   client_id=client,
                                                   group_id=consumer_group,
                                                   key_deserializer=bytes_to_int_big_endian,
-                                                  value_deserializer=lambda v: json.loads(v.decode(DEFAULT_ENCODING)))
+                                                  value_deserializer=lambda v: json.loads(v.decode(DEFAULT_ENCODING)),
+                                                  enable_auto_commit=auto_commit)
     await consumer.start()
     return consumer
 
