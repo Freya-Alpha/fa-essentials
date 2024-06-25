@@ -28,7 +28,7 @@ def find_project_root(current_path: pathlib.Path, max_depth: int = 10) -> pathli
 # Initialize PROJECT_ROOT when the module is loaded
 def initialize_project_root():
     global PROJECT_ROOT
-    PROJECT_ROOT = find_project_root(pathlib.Path(os.getcwd()).resolve())
+    PROJECT_ROOT = find_project_root(pathlib.Path(os.path.abspath(os.path.dirname(__file__))).resolve())
 
 initialize_project_root()
 
