@@ -27,7 +27,11 @@ def get_kafka_cluster_brokers() -> List[str]:
     """Fetch the kafka broker array. This should return an array with nodes and ports.
     e.g. ['localhost:9092', 'localhost:9093']"""
     if utils.get_environment().upper() in ["DEV", None]:
-        brokers = 'localhost:9092'  # ,localhost:9093,localhost:9094'
+        kafka_broker_string: str = os.getenv("KAFKA_BROKER_STRING", "NODES_NOT_DEFINED")
+        if kafka_broker_string == "NODES_NOT_DEFINED":
+            return ['localhost:9092']
+        else:
+            return kafka_broker_string
     else:
         # the value of the KAFKA_BROKER_STRING is set by the global config map.
         brokers = os.getenv("KAFKA_BROKER_STRING", "NODES_NOT_DEFINED")
