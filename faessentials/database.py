@@ -102,13 +102,13 @@ def bytes_to_int_big_endian(key_bytes: bytes) -> int or None:
 
 def get_ksqldb_url(kafka_ksqldb_endpoint_literal: KafkaKSqlDbEndPoint = KafkaKSqlDbEndPoint.KSQL) -> str:
     if utils.get_environment().upper() in ["DEV", None]:
-        ksqldb_nodes = ["localhost:8088"]
+        ksqldb_nodes: str = os.getenv("KSQLDB_STRING", "KSQLDB_NOT_DEFINED")
+        if ksqldb_nodes == "KSQLDB_NOT_DEFINED" or ksqldb_nodes == "":
+            ksqldb_nodes = ['localhost:8088']
         return f"http://{random.choice(ksqldb_nodes)}/{kafka_ksqldb_endpoint_literal}"
     else:
-        # TODO: THIS SHOULD BE FETCHED FROM THE GLOBAL CONFIG-MAP FOR FA.
-        #return f"http://ksqldb.sahri.local/{kafka_ksqldb_endpoint}"
-        KSQLDB_STRING: str = os.getenv("KSQLDB_STRING", "NODES_NOT_DEFINED")
-        return f"{KSQLDB_STRING}/{kafka_ksqldb_endpoint_literal}"
+        KSQLDB_STRING: str = os.getenv("KSQLDB_STRING", "KSQLDB_NOT_DEFINED")
+        return f"http://{KSQLDB_STRING}/{kafka_ksqldb_endpoint_literal}"
 
 
 async def table_or_view_exists(name: str, connection_time_out: float = DEFAULT_CONNECTION_TIMEOUT) -> bool:
