@@ -24,38 +24,32 @@ jobs:
           python -m pip install --upgrade pip          
           pip install pytest
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    
-      - name: Run Kafka KRaft Broker
-        uses: spicyparrot/kafka-kraft-action@v1.1.0
-        id: kafka
-        with:
-          kafka-version: "3.7.0"
-          kafka-topics: "example,1"
-      
-      - name: Set Kafka Broker String
-        run: echo "KAFKA_BROKER_STRING=${{ steps.kafka.outputs.kafka_runner_address }}:9093" >> $GITHUB_ENV
 
-      - name: Run ksqlDB Server
+      - name: Set up Docker Compose
         run: |
-          docker run -d --name ksqldb-server \
-            -e KSQL_BOOTSTRAP_SERVERS=${{ steps.kafka.outputs.kafka_runner_address }}:9093 \
-            -e KSQL_LISTENERS=http://0.0.0.0:8088 \
-            confluentinc/ksqldb-server:0.21.0
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
 
-      - name: Get ksqlDB Server IP
+      - name: Create Docker network
+        run: docker network create local-kafka-network
+
+      - name: Start Kafka and ksqlDB
+        working-directory: ./tests
+        run: docker-compose up -d
+
+      - name: Wait for Kafka to be ready
         run: |
-          KSQLDB_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ksqldb-server)
-          echo "KSQLDB_STRING=http://${KSQLDB_IP}:8088" >> $GITHUB_ENV
+          until docker exec kafka1 kafka-topics --bootstrap-server kafka1:29092 --list > /dev/null 2>&1; do
+            echo "Waiting for Kafka to be ready..."
+            sleep 5
+          done
 
       - name: Wait for ksqlDB to be ready
         run: |
-          echo ${KSQLDB_STRING}
-          until [[ "$(curl -s ${KSQLDB_STRING}/info | jq -r '.KsqlServerInfo.serverStatus')" == "RUNNING" ]]; do
+          until [[ "$(curl -s http://localhost:8088/info | jq -r '.KsqlServerInfo.serverStatus')" == "RUNNING" ]]; do
             echo "Waiting for ksqlDB to be ready..."
             sleep 5
           done
-        env:
-          KSQLDB_STRING: ${{ env.KSQLDB_STRING }}
 
       - name: Set Project Root Environment Variable for the tests
         run: echo "PROJECT_ROOT=$(pwd)" >> $GITHUB_ENV    
@@ -67,11 +61,11 @@ jobs:
           pwd
           ls -l  # Optional: List files and directories to show 'config' and 'logs'
 
-      - name: Install dependencies
+      - name: Install development dependencies
         run: |
           python -m pip install --upgrade pip          
           pip install pytest
-          if [ -f requirements-dev.txt]; then pip install -r requirements-dev.txt; fi    
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi    
 
       - name: Running all PyTests
         run: |
