@@ -104,7 +104,7 @@ def get_ksqldb_url(kafka_ksqldb_endpoint_literal: KafkaKSqlDbEndPoint = KafkaKSq
     if utils.get_environment().upper() in ["DEV", None]:
         ksqldb_nodes: str = os.getenv("KSQLDB_STRING", "KSQLDB_NOT_DEFINED")
         if ksqldb_nodes == "KSQLDB_NOT_DEFINED" or ksqldb_nodes == "":
-            ksqldb_nodes = [f"http://localhost:8088/{kafka_ksqldb_endpoint_literal}"]
+            ksqldb_nodes = ["http://localhost:8088"]
         return f"{random.choice(ksqldb_nodes)}/{kafka_ksqldb_endpoint_literal}"
     else:
         KSQLDB_STRING: str = os.getenv("KSQLDB_STRING", "KSQLDB_NOT_DEFINED")
