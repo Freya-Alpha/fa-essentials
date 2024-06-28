@@ -3,6 +3,7 @@ import os
 import random
 import socket
 from enum import Enum
+import time
 from typing import List
 import httpx
 import pydantic
@@ -137,6 +138,41 @@ def table_or_view_exists(name: str, connection_time_out: float = DEFAULT_CONNECT
 
     return False
 
+def create_table(sql_statement: str, table_name: str):
+    """The invocation of this function will retry endlessly if the httpx.RemoteProtocolError or httpx.ConnectError occures. This implies, that the cluster is not yet ready and thus we need to retry.
+    For all other exceptions, we retry for 60 seconds (every 5 seconds)."""
+    headers = {"Content-Type": "application/json"}
+    response = httpx.post(f"{get_ksqldb_url(KafkaKSqlDbEndPoint.KSQL)}", json={"ksql": sql_statement}, headers=headers, timeout=30)
+    if response.status_code == 200:
+        logger.info(f"Successfully created table {table_name}.")
+    else:
+        if "A table with the same name already exists" in response.text:
+            logger.info(f"Table {table_name} already exists. Skipping creation.")
+            return
+        elif "KSQL is not yet ready to serve requests." in response.text:
+            logger.warning(f"KSQL is not ready to create the table {table_name}. Retrying...")
+            raise KSQLNotReadyError("KSQL is not yet ready to serve requests.")
+        else:
+            error_msg = f"Failed to create table {table_name}: {response.text}"
+            logger.error(error_msg)
+            raise Exception(error_msg)
+
+    # Wait until the table is created
+    max_wait_time = 60  # seconds
+    poll_interval = 5  # seconds
+    elapsed_time = 0
+
+    while elapsed_time < max_wait_time:
+        if table_or_view_exists(table_name):
+            logger.info(f"Table {table_name} is now available.")
+            return
+        else:
+            logger.debug(f"Table {table_name} is not yet available. Waiting...")
+            time.sleep(poll_interval)
+            elapsed_time += poll_interval
+
+    logger.error(f"Timed out waiting for table {table_name} to be created.")
+    raise TimeoutError(f"Timed out waiting for table {table_name} to be created.")
 
 async def execute_sql(sql: str, connection_time_out: float = DEFAULT_CONNECTION_TIMEOUT):
     """Executes the provided sql command."""
