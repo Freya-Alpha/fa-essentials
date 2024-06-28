@@ -40,8 +40,12 @@ jobs:
           docker run -d --name ksqldb-server \
             -e KSQL_BOOTSTRAP_SERVERS=${{ steps.kafka.outputs.kafka_runner_address }}:9093 \
             -e KSQL_LISTENERS=http://0.0.0.0:8088 \
+            -p 8088:8088 \
             confluentinc/ksqldb-server:0.21.0
-          echo "KSQLDB_STRING=http://localhost:8088" >> $GITHUB_ENV
+        id: ksqldb
+
+      - name: Set ksqlDB Server String
+        run: echo "KSQLDB_STRING=http://${{ steps.ksqldb.outputs.container_address }}:8088" >> $GITHUB_ENV
 
       - name: Wait for ksqlDB to be ready
         run: |
