@@ -2,12 +2,9 @@ name: Unit Tests, build & deploy library
 on:
   push:
     branches: [ main ]
-    # Exclude commits with the specific commit message from triggering the workflow
     paths-ignore:
       - '**.md'
 jobs:
-
-  # BUILD AND TEST THE LIBRARY
   build:
     if: contains(github.event.head_commit.message, '[AUTO]') == false
     runs-on: ubuntu-latest
@@ -15,100 +12,94 @@ jobs:
       matrix:
         python-version: ["3.9.13"]
     steps:
-    - uses: actions/checkout@v4
-      # with:
-      #   token: ${{ secrets.REPO_ACCESS_TOKEN }}  
+      - uses: actions/checkout@v4
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip          
-        pip install pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip          
+          pip install pytest
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     
-    - name: Run Kafka KRaft Broker
-      uses: spicyparrot/kafka-kraft-action@v1.1.0
-      id: kafka
-      with:
-        kafka-version: "3.7.0"
-        kafka-topics: "example,1"
+      - name: Run Kafka KRaft Broker
+        uses: spicyparrot/kafka-kraft-action@v1.1.0
+        id: kafka
+        with:
+          kafka-version: "3.7.0"
+          kafka-topics: "example,1"
       
-    - name: Set Kafka Broker String
-      run: echo "KAFKA_BROKER_STRING=${{ steps.kafka.outputs.kafka_runner_address }}:9093" >> $GITHUB_ENV
+      - name: Set Kafka Broker String
+        run: echo "KAFKA_BROKER_STRING=${{ steps.kafka.outputs.kafka_runner_address }}:9093" >> $GITHUB_ENV
 
-    - name: Run ksqlDB Server
-      run: |
-        docker run -d --name ksqldb-server \
-          -e KSQL_BOOTSTRAP_SERVERS=${{ steps.kafka.outputs.kafka_runner_address }}:9093 \
-          -e KSQL_LISTENERS=http://0.0.0.0:8088 \
-          confluentinc/ksqldb-server:0.21.0
-        echo "KSQLDB_STRING=http://localhost:8088" >> $GITHUB_ENV
+      - name: Run ksqlDB Server
+        run: |
+          docker run -d --name ksqldb-server \
+            -e KSQL_BOOTSTRAP_SERVERS=${{ steps.kafka.outputs.kafka_runner_address }}:9093 \
+            -e KSQL_LISTENERS=http://0.0.0.0:8088 \
+            confluentinc/ksqldb-server:0.21.0
+          echo "KSQLDB_STRING=http://localhost:8088" >> $GITHUB_ENV
 
-    - name: Wait for ksqlDB to be ready
-      run: |
-        echo ${KSQLDB_STRING}
-        until curl -s ${KSQLDB_STRING}/info > /dev/null; do
-          echo "Waiting for ksqlDB to be ready..."
-          sleep 5
-        done
-      env:
-        KSQLDB_STRING: ${{ env.KSQLDB_STRING }}
-    
-    - name: Set Project Root Environment Variable for the tests
-      run: echo "PROJECT_ROOT=$(pwd)" >> $GITHUB_ENV    
+      - name: Wait for ksqlDB to be ready
+        run: |
+          echo ${KSQLDB_STRING}
+          until [[ "$(curl -s ${KSQLDB_STRING}/info | jq -r '.KsqlServerInfo.serverStatus')" == "RUNNING" ]]; do
+            echo "Waiting for ksqlDB to be ready..."
+            sleep 5
+          done
+        env:
+          KSQLDB_STRING: ${{ env.KSQLDB_STRING }}
 
-    - name: Create required Directories and print Directory
-      run: |
-        mkdir -p config logs
-        echo "Directories created in:"
-        pwd
-        ls -l  # Optional: List files and directories to show 'config' and 'logs'
+      - name: Set Project Root Environment Variable for the tests
+        run: echo "PROJECT_ROOT=$(pwd)" >> $GITHUB_ENV    
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip          
-        pip install pytest
-        if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi    
+      - name: Create required Directories and print Directory
+        run: |
+          mkdir -p config logs
+          echo "Directories created in:"
+          pwd
+          ls -l  # Optional: List files and directories to show 'config' and 'logs'
 
-    - name: Running all PyTests
-      run: |
-        pytest -s -vv
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip          
+          pip install pytest
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi    
 
-  # DEPLOY THE LIBRARY TO PYPI   
+      - name: Running all PyTests
+        run: |
+          pytest -s -vv
+
   pypi-publish:
     needs: build
-    #if: github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[AUTO]') == false
     name: upload release to PyPI
     runs-on: ubuntu-latest
-    #environment: release  # Define your GitHub Environment name here
     permissions:
-      id-token: write  # Required for OIDC
+      id-token: write
       contents: read
     steps:
-    - uses: actions/checkout@v4
-      with:
-        token: ${{ secrets.REPO_ACCESS_TOKEN }}
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: 3.9.13
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install build bumpver --upgrade setuptools
-    - name: Configure git
-      run: |
-        git config --local user.email "brayan@brayan.com"
-        git config --local user.name "svabra"
-    # Only bump version if not an [AUTO] commit
-    - name: Bump version
-      if: contains(github.event.head_commit.message, '[AUTO]') == false
-      run: bumpver update --patch --commit-message "[AUTO] Bump version"
-    - name: Build package
-      run: python -m build
-    - name: Publish package distributions to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.9.13
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build bumpver --upgrade setuptools
+      - name: Configure git
+        run: |
+          git config --local user.email "brayan@brayan.com"
+          git config --local user.name "svabra"
+      - name: Bump version
+        if: contains(github.event.head_commit.message, '[AUTO]') == false
+        run: bumpver update --patch --commit-message "[AUTO] Bump version"
+      - name: Build package
+        run: python -m build
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
