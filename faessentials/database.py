@@ -13,6 +13,9 @@ from faessentials.constants import DEFAULT_ENCODING, DEFAULT_CONNECTION_TIMEOUT
 
 logger = global_logger.setup_custom_logger("app")
 
+class KSQLNotReadyError(Exception):
+    pass
+
 class KafkaKSqlDbEndPoint(str, Enum):
     KSQL = "ksql"
     KSQL_TERMINATE = "ksql/terminate"
@@ -106,7 +109,7 @@ def get_ksqldb_url(kafka_ksqldb_endpoint_literal: KafkaKSqlDbEndPoint = KafkaKSq
         ksqldb_nodes: str = os.getenv("KSQLDB_STRING", "KSQLDB_NOT_DEFINED")
         if ksqldb_nodes == "KSQLDB_NOT_DEFINED" or ksqldb_nodes == "":
             ksqldb_nodes = ["http://localhost:8088"]
-        return f"{random.choice(ksqldb_nodes)}/{kafka_ksqldb_endpoint_literal}"
+        return f"{random.choice(ksqldb_nodes)}/{kafka_ksqldb_endpoint_literal}"    
     else:
         KSQLDB_STRING: str = os.getenv("KSQLDB_STRING", "KSQLDB_NOT_DEFINED")
         return f"{KSQLDB_STRING}/{kafka_ksqldb_endpoint_literal}"
@@ -117,6 +120,7 @@ def table_or_view_exists(name: str, connection_time_out: float = DEFAULT_CONNECT
     ksql_url = get_ksqldb_url(KafkaKSqlDbEndPoint.KSQL)
     response = httpx.post(ksql_url, json={"ksql": "LIST TABLES;"}, timeout=connection_time_out)
     logger.debug(f"Table Check Result: {response}")
+    print(f"{response.status_code}: {response.text}")
     # Check if the request was successful
     if response.status_code == 200:
         tables = response.json()[0]["tables"]
@@ -124,6 +128,9 @@ def table_or_view_exists(name: str, connection_time_out: float = DEFAULT_CONNECT
             if str.lower(table["name"]) == str.lower(name):
                 logger.debug(f"Table {name} exists.")
                 return True
+    elif "KSQL is not yet ready to serve requests." in response.text:
+        logger.warning(f"KSQL is not ready to create the table {name}. Retrying...")
+        raise KSQLNotReadyError("KSQL is not yet ready to serve requests.")
     else:
         logger.debug(f"Table {name} does not exists.")
         raise Exception(f'Failed to test if table or view exists in Kafka: {response.status_code}')
