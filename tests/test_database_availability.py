@@ -6,7 +6,7 @@ from faessentials.database import is_ksqldb_available
 
 class TestKsqlDBAvailability(unittest.TestCase):
 
-    @patch('tksessentials.database.httpx.get')
+    @patch('faessentials.database.httpx.get')
     def test_ksqldb_available(self, mock_httpx_get):
         # Mocking a successful response from ksqlDB
         mock_response = Mock()
@@ -18,7 +18,7 @@ class TestKsqlDBAvailability(unittest.TestCase):
         print(result)
         self.assertTrue(result)
 
-    @patch('tksessentials.database.httpx.get')
+    @patch('faessentials.database.httpx.get')
     def test_ksqldb_unavailable(self, mock_httpx_get):
         # Mocking a response with NOT_RUNNING status from ksqlDB
         mock_response = Mock()
@@ -30,7 +30,7 @@ class TestKsqlDBAvailability(unittest.TestCase):
         print(result)
         self.assertFalse(result)
 
-    @patch('tksessentials.database.httpx.get')
+    @patch('faessentials.database.httpx.get')
     def test_ksqldb_no_response(self, mock_httpx_get):
         # Mocking no response from ksqlDB
         mock_response = Mock()
