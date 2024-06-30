@@ -9,7 +9,7 @@ import httpx
 @pytest.fixture(scope="module")
 def setup():
     print("\n")
-    print("All tests require a Kafka broker and a ksqlDB instance to be available.")
+    print("REMINDER. All tests require a Kafka broker and a ksqlDB instance to be available.")
     print(f"\tENV: {utils.get_environment()}")
     print(f"\tkafka: {database.get_kafka_cluster_brokers()}")
     print(f"\tksqldb: {database.get_ksqldb_url()}")
@@ -56,7 +56,8 @@ def test_table_or_view_exists():
             print(f"Test failed with an unexpected error: {e}. {e.args}")
             raise
 
-def test_create_table():
+@pytest.mark.asyncio
+async def test_create_table():
     TABLE_NAME = "TEST_TABLE"
     sql_statement = f"""
     CREATE TABLE {TABLE_NAME}(
@@ -75,7 +76,7 @@ def test_create_table():
 
     for attempt in range(max_retries):
         try:
-            database.create_table(sql_statement, TABLE_NAME)
+            await database.create_table(sql_statement, TABLE_NAME)
             assert database.table_or_view_exists(TABLE_NAME)
             break
         except (
@@ -94,3 +95,122 @@ def test_create_table():
         except Exception as e:
             print(f"Test failed with an unexpected error: {e}")
             raise
+
+@pytest.mark.asyncio
+async def test_prepare_sql_statement():
+    sql_statement = """
+    CREATE TABLE TEST_TABLE_PARTITION(
+        event_timestamp BIGINT PRIMARY KEY,
+        detail STRING,
+        data STRING,
+        signal_data STRUCT<
+            provider_signal_id STRING,
+            provider_trade_id STRING,
+            provider_id STRING,
+            strategy_id STRING,
+            is_hot_signal BOOLEAN,
+            market STRING,
+            data_source STRING,
+            direction STRING,
+            side STRING,
+            order_type STRING,
+            price DOUBLE,
+            tp DOUBLE,
+            sl DOUBLE,
+            position_size_in_percentage INT,
+            date_of_creation BIGINT
+        >,
+        ip STRING
+    ) WITH (
+        KAFKA_TOPIC='test_topic_partition',
+        VALUE_FORMAT='JSON',
+        TIMESTAMP='event_timestamp',
+        PARTITIONS=3
+    );
+    """
+
+    with patch('faessentials.database.topic_exists', return_value=True):
+        prepared_statement = await database.prepare_sql_statement(sql_statement)
+        assert "PARTITIONS=3" not in prepared_statement
+
+    with patch('faessentials.database.topic_exists', return_value=False):
+        prepared_statement = await database.prepare_sql_statement(sql_statement)
+        assert "PARTITIONS=3" in prepared_statement
+
+@pytest.mark.asyncio
+async def test_prepare_sql_statement_missing():
+    """This test checks if the preparation works as well, wenn there is no PARTITION?"""
+    sql_statement = """
+    CREATE TABLE TEST_TABLE_PARTITION(
+        event_timestamp BIGINT PRIMARY KEY,
+        detail STRING,
+        data STRING,
+        signal_data STRUCT<
+            provider_signal_id STRING,
+            provider_trade_id STRING,
+            provider_id STRING,
+            strategy_id STRING,
+            is_hot_signal BOOLEAN,
+            market STRING,
+            data_source STRING,
+            direction STRING,
+            side STRING,
+            order_type STRING,
+            price DOUBLE,
+            tp DOUBLE,
+            sl DOUBLE,
+            position_size_in_percentage INT,
+            date_of_creation BIGINT
+        >,
+        ip STRING
+    ) WITH (
+        KAFKA_TOPIC='test_topic_partition',
+        VALUE_FORMAT='JSON',
+        TIMESTAMP='event_timestamp'
+    );
+    """
+
+    with patch('faessentials.database.topic_exists', return_value=True):
+        prepared_statement = await database.prepare_sql_statement(sql_statement)
+        assert "PARTITIONS=3" not in prepared_statement
+
+    with patch('faessentials.database.topic_exists', return_value=False):
+        prepared_statement = await database.prepare_sql_statement(sql_statement)
+        assert "PARTITIONS=3" in prepared_statement
+
+def test_clean_sql_statement():
+    sql_statement = """
+    CREATE TABLE fa_signal_processing_trading_signal_received(
+        event_timestamp BIGINT PRIMARY KEY,
+        detail STRING,
+        data STRING,
+        signal_data STRUCT<
+            provider_signal_id STRING,
+            provider_trade_id STRING,
+            provider_id STRING,
+            strategy_id STRING,
+            is_hot_signal BOOLEAN,
+            market STRING,
+            data_source STRING,
+            direction STRING,
+            side STRING,
+            order_type STRING,
+            price DOUBLE,
+            tp DOUBLE,
+            sl DOUBLE,
+            position_size_in_percentage INT,
+            date_of_creation BIGINT
+        >,
+        ip STRING
+    ) WITH (
+        KAFKA_TOPIC='fa_signal_processing.trading_signal_received',
+        VALUE_FORMAT='JSON',
+        TIMESTAMP='event_timestamp',
+        PARTITIONS=3
+    );
+    """
+
+    expected_cleaned_sql = "CREATE TABLE fa_signal_processing_trading_signal_received( event_timestamp BIGINT PRIMARY KEY, detail STRING, data STRING, signal_data STRUCT< provider_signal_id STRING, provider_trade_id STRING, provider_id STRING, strategy_id STRING, is_hot_signal BOOLEAN, market STRING, data_source STRING, direction STRING, side STRING, order_type STRING, price DOUBLE, tp DOUBLE, sl DOUBLE, position_size_in_percentage INT, date_of_creation BIGINT >, ip STRING ) WITH ( KAFKA_TOPIC='fa_signal_processing.trading_signal_received', VALUE_FORMAT='JSON', TIMESTAMP='event_timestamp', PARTITIONS=3 );"
+
+    cleaned_sql = database.clean_sql_statement(sql_statement)
+    assert cleaned_sql == expected_cleaned_sql

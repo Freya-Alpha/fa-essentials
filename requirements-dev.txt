@@ -9,4 +9,5 @@ setuptools==58.1.0
 
 # Testing
 pytest==8.2.0
+pytest-asyncio
 responses

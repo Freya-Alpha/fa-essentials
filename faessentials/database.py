@@ -1,9 +1,10 @@
+import asyncio
 import json
 import os
 import random
+import re
 import socket
 from enum import Enum
-import time
 from typing import List
 import httpx
 import pydantic
@@ -41,7 +42,7 @@ async def is_kafka_available() -> bool:
         await producer.stop()
         return True
     except Exception as e:
-        print(f"Error checking Kafka availability: {e}")
+        logger.error(f"Error checking Kafka availability: {e}")
         return False
 
 def get_kafka_cluster_brokers() -> List[str]:
@@ -58,6 +59,13 @@ def get_kafka_cluster_brokers() -> List[str]:
         brokers = os.getenv("KAFKA_BROKER_STRING", "NODES_NOT_DEFINED")
     return brokers.split(",")
 
+async def topic_exists(topic_name):
+    consumer = AIOKafkaConsumer(bootstrap_servers=get_kafka_cluster_brokers())
+    await consumer.start()
+    try:
+        return topic_name in await consumer.topics()
+    finally:
+        await consumer.stop()
 
 async def get_default_kafka_producer() -> AIOKafkaProducer:
     """ This default producer is expecting you to send json data, which it will then automatically
@@ -144,7 +152,7 @@ def get_ksqldb_url(kafka_ksqldb_endpoint_literal: KafkaKSqlDbEndPoint = KafkaKSq
         ksqldb_nodes: str = os.getenv("KSQLDB_STRING", "KSQLDB_NOT_DEFINED")
         if ksqldb_nodes == "KSQLDB_NOT_DEFINED" or ksqldb_nodes == "":
             ksqldb_nodes = ["http://localhost:8088"]
-        return f"{random.choice(ksqldb_nodes)}/{kafka_ksqldb_endpoint_literal}"    
+        return f"{random.choice(ksqldb_nodes)}/{kafka_ksqldb_endpoint_literal}"
     else:
         KSQLDB_STRING: str = os.getenv("KSQLDB_STRING", "KSQLDB_NOT_DEFINED")
         return f"{KSQLDB_STRING}/{kafka_ksqldb_endpoint_literal}"
@@ -154,8 +162,7 @@ def table_or_view_exists(name: str, connection_time_out: float = DEFAULT_CONNECT
     """Checks, if the provided table or queryable already exists."""
     ksql_url = get_ksqldb_url(KafkaKSqlDbEndPoint.KSQL)
     response = httpx.post(ksql_url, json={"ksql": "LIST TABLES;"}, timeout=connection_time_out)
-    logger.debug(f"Table Check Result: {response}")
-    print(f"{response.status_code}: {response.text}")
+    logger.debug(f"Table Check Result: {response.status_code}: {response.text}")
     # Check if the request was successful
     if response.status_code == 200:
         tables = response.json()[0]["tables"]
@@ -172,11 +179,44 @@ def table_or_view_exists(name: str, connection_time_out: float = DEFAULT_CONNECT
 
     return False
 
-def create_table(sql_statement: str, table_name: str):
+async def prepare_sql_statement(sql_statement: str) -> str:
+    """If the DDL (sql_statement) one submits to create a table is a CTAS, then we:
+    1) we parse the query for "KAFKA_TOPIC"
+    2) check if the topic exists.
+    3) if it exists, remove the PARTITIONS config of the sql_statement entirly to avoid conflicts.
+    4) if it does not exists, we keep the sql_statement unmodified.
+    """
+    kafka_topic_match = re.search(r"KAFKA_TOPIC\s*=\s*'([^']+)'", sql_statement, re.IGNORECASE)    
+    if kafka_topic_match:
+        partitions_match = re.search(r"PARTITIONS\s*=\s*\d+", sql_statement, re.IGNORECASE)
+        kafka_topic = kafka_topic_match.group(1)
+        if await topic_exists(kafka_topic):
+            logger.info(f"Kafka topic {kafka_topic} exists.")
+            if partitions_match:
+                sql_statement = re.sub(r",?\s*PARTITIONS\s*=\s*\d+", "", sql_statement)
+                logger.debug(f"PARTITIONS argument has been removed from the SQL statement, since the topic already exists. {sql_statement}")
+            return sql_statement
+        else:
+            logger.info(f"Kafka topic {kafka_topic} does not exist. Setting PARTITIONS to 3 if not specified.")
+            if not partitions_match:
+                sql_statement = re.sub(r"\);", ", PARTITIONS=3);", sql_statement)
+            return sql_statement
+    return sql_statement
+
+def clean_sql_statement(sql_statement: str) -> str:
+    """Cleans the SQL statement by removing unnecessary spacing, newlines, and tabs."""
+    return ' '.join(sql_statement.split())
+
+async def create_table(sql_statement: str, table_name: str):
     """The invocation of this function will retry endlessly if the httpx.RemoteProtocolError or httpx.ConnectError occures. This implies, that the cluster is not yet ready and thus we need to retry.
-    For all other exceptions, we retry for 60 seconds (every 5 seconds)."""
+    For all other exceptions, we retry for 60 seconds (every 5 seconds).    
+    """
+    sql_statement = clean_sql_statement(sql_statement)
+    sql_statement = await prepare_sql_statement(sql_statement)
+
     headers = {"Content-Type": "application/json"}
     response = httpx.post(f"{get_ksqldb_url(KafkaKSqlDbEndPoint.KSQL)}", json={"ksql": sql_statement}, headers=headers, timeout=30)
+
     if response.status_code == 200:
         logger.info(f"Successfully created table {table_name}.")
     else:
@@ -202,14 +242,14 @@ def create_table(sql_statement: str, table_name: str):
             return
         else:
             logger.debug(f"Table {table_name} is not yet available. Waiting...")
-            time.sleep(poll_interval)
+            await asyncio.sleep(poll_interval)
             elapsed_time += poll_interval
 
     logger.error(f"Timed out waiting for table {table_name} to be created.")
     raise TimeoutError(f"Timed out waiting for table {table_name} to be created.")
 
 async def execute_sql(sql: str, connection_time_out: float = DEFAULT_CONNECTION_TIMEOUT):
-    """Executes the provided sql command."""
+    """Executes the provided sql command. To create tables, use the create_table function instead."""
 
     ksql_url = get_ksqldb_url(KafkaKSqlDbEndPoint.KSQL)
     response = httpx.post(ksql_url, json={"ksql": sql}, timeout=connection_time_out)
@@ -236,7 +276,7 @@ async def produce_message(topic_name: str, key: str, value: any) -> None:
         logger.error(error_message)
         raise Exception(error_message)
     except Exception as ex:
-        error_message = f"""A general error occurred when trying to send a message of type {type(object)} 
+        error_message = f"""A general error occurred when trying to send a message of type {type(object)}
                         to the database. Error message: {ex}"""
 
         logger.error(error_message)
