@@ -3,7 +3,6 @@ import json
 import os
 import random
 import re
-import socket
 from enum import Enum
 from typing import List
 import httpx
@@ -59,6 +58,20 @@ def get_kafka_cluster_brokers() -> List[str]:
         brokers = os.getenv("KAFKA_BROKER_STRING", "NODES_NOT_DEFINED")
     return brokers.split(",")
 
+def compose_consumer_id() -> str:
+    """Do not mistaken the consumer_id for the consumer_group_name.
+    The consumer group is unique for a group of consumers - since it is expected to be the kubernetes pod name.
+    Where as the consumer_id - what this functin returns - is a globally unique identifier.
+    As of now, regard the consumer_id and consumer_name the same."""
+    return utils.get_pod_name()
+
+def compose_consumer_group_name() -> str:
+    """Do not mistaken the consumer_group_name for the consumer_id.
+    The consumer group name - what this function returns - is unique for a group of consumers.
+    Where as the consumer_id is a globally unique identifier.
+    The consumer_group_name is composed of domain and application name."""
+    return utils.get_application_identifier()
+
 async def topic_exists(topic_name):
     consumer = AIOKafkaConsumer(bootstrap_servers=get_kafka_cluster_brokers())
     await consumer.start()
@@ -67,8 +80,13 @@ async def topic_exists(topic_name):
     finally:
         await consumer.stop()
 
-async def get_default_kafka_producer() -> AIOKafkaProducer:
-    """ This default producer is expecting you to send json data, which it will then automatically
+def compose_producer_id() -> str:
+    """Creates a unique producer id: the pod_name."""
+    return utils.get_pod_name()
+
+async def get_default_kafka_producer(client_id: str = compose_producer_id()) -> AIOKafkaProducer:
+    """ Caution: Always stop/close this producer when done.
+        This default producer is expecting you to send json data, which it will then automatically
         serialize/encode with UTF-8.
         The key must be a posix timestamp (int in python, BIGINT in Kafka).
         Feel free to create your own kafka producer, if these default values do no suite the use case.
@@ -84,27 +102,28 @@ async def get_default_kafka_producer() -> AIOKafkaProducer:
             return json.dumps(v).encode(DEFAULT_ENCODING)
 
     def get_key_serializer(k: str) -> bytes:
-        return k.encode(DEFAULT_ENCODING)
-        # if isinstance(k, str):
-        #     return k.encode(DEFAULT_ENCODING)
-        # else:
-        #     return k.to_bytes(8, byteorder='big')
+        return k.encode(DEFAULT_ENCODING)    
 
     producer: AIOKafkaProducer = AIOKafkaProducer(
         bootstrap_servers=broker_str,
+        client_id=client_id,
         key_serializer=lambda k: get_key_serializer(k),
         value_serializer=lambda v: get_value_serializer(v))
+
     # start the producer for the client (it is often forgotten).
     await producer.start()
     return producer
 
-
-async def get_default_kafka_consumer(topics: str, client: str = socket.gethostname(), consumer_group: str = None, auto_commit: bool = True) -> AIOKafkaConsumer:
+async def get_default_kafka_consumer(topics: str, client: str = compose_consumer_id(), consumer_group: str = None, auto_commit: bool = True, auto_offset_reset='latest') -> AIOKafkaConsumer:
     """ Will return an async-capable consumer.
         However, you may create your own consumer with specific settings. This is only for convenience.
         The offset could be set to 'earliest'. Default is 'latest'.
         : param auto_commit (True): Set auto_commit to False to control the commits yourself.
     """
+
+    def get_key_deserializer(key_bytes: bytes) -> str:
+        return key_bytes.decode(DEFAULT_ENCODING)
+        
     brokers: List[str] = get_kafka_cluster_brokers()
     broker_str = ",".join(brokers)
     # Create the Producer instance
@@ -112,12 +131,12 @@ async def get_default_kafka_consumer(topics: str, client: str = socket.gethostna
                                                   bootstrap_servers=broker_str,
                                                   client_id=client,
                                                   group_id=consumer_group,
-                                                  key_deserializer=bytes_to_int_big_endian,
+                                                  key_deserializer=lambda k: get_key_deserializer(k),
                                                   value_deserializer=lambda v: json.loads(v.decode(DEFAULT_ENCODING)),
+                                                  auto_offset_reset=auto_offset_reset,
                                                   enable_auto_commit=auto_commit)
     await consumer.start()
     return consumer
-
 
 def bytes_to_int_big_endian(key_bytes: bytes) -> int or None:
     """Converts 8 bytes in big-endian format back into an integer."""
@@ -157,7 +176,6 @@ def get_ksqldb_url(kafka_ksqldb_endpoint_literal: KafkaKSqlDbEndPoint = KafkaKSq
         KSQLDB_STRING: str = os.getenv("KSQLDB_STRING", "KSQLDB_NOT_DEFINED")
         return f"{KSQLDB_STRING}/{kafka_ksqldb_endpoint_literal}"
 
-
 def table_or_view_exists(name: str, connection_time_out: float = DEFAULT_CONNECTION_TIMEOUT) -> bool:
     """Checks, if the provided table or queryable already exists."""
     ksql_url = get_ksqldb_url(KafkaKSqlDbEndPoint.KSQL)
@@ -186,7 +204,7 @@ async def prepare_sql_statement(sql_statement: str) -> str:
     3) if it exists, remove the PARTITIONS config of the sql_statement entirly to avoid conflicts.
     4) if it does not exists, we keep the sql_statement unmodified.
     """
-    kafka_topic_match = re.search(r"KAFKA_TOPIC\s*=\s*'([^']+)'", sql_statement, re.IGNORECASE)    
+    kafka_topic_match = re.search(r"KAFKA_TOPIC\s*=\s*'([^']+)'", sql_statement, re.IGNORECASE)
     if kafka_topic_match:
         partitions_match = re.search(r"PARTITIONS\s*=\s*\d+", sql_statement, re.IGNORECASE)
         kafka_topic = kafka_topic_match.group(1)
@@ -259,7 +277,6 @@ async def execute_sql(sql: str, connection_time_out: float = DEFAULT_CONNECTION_
         logger.info(f"The provided SQL statement executed successfully. SQL: {sql}")
     else:
         raise Exception(f"Failed to execute SQL statement: {response.status_code}. SQL: {sql}")
-
 
 async def produce_message(topic_name: str, key: str, value: any) -> None:
     """Will send the provided message to the specified Kafka topic and ends the producer when accomplished.."""
