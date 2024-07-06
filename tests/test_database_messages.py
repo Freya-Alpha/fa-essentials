@@ -1,6 +1,5 @@
 import pytest
 import asyncio
-import json
 from aiokafka.errors import KafkaError
 from aiokafka import AIOKafkaConsumer
 from faessentials import database
