@@ -214,3 +214,68 @@ def test_clean_sql_statement():
 
     cleaned_sql = database.clean_sql_statement(sql_statement)
     assert cleaned_sql == expected_cleaned_sql
+
+def test_stream_exists():
+    max_retries = 5
+    delay = 10  # seconds
+
+    for attempt in range(max_retries):
+        try:
+            assert not database.stream_exists("NON_EXISTENT_STREAM")
+            break
+        except (
+            httpx.ConnectError,
+            KSQLNotReadyError,
+            httpx.RemoteProtocolError,
+            httpx.ReadError,
+        ) as e:
+            if attempt < max_retries - 1:
+                print(
+                    f"Attempt {attempt + 1}/{max_retries} failed with error: {e}. Retrying in {delay} seconds..."
+                )
+                time.sleep(delay)
+            else:
+                raise
+        except Exception as e:
+            print(f"Test failed with an unexpected error: {e}. {e.args}")
+            raise
+
+@pytest.mark.asyncio
+async def test_create_stream():
+    STREAM_NAME = "TEST_STREAM"
+    sql_statement = f"""
+    CREATE STREAM {STREAM_NAME}(
+        event_timestamp BIGINT,
+        detail STRING,
+        data STRING
+    ) WITH (
+        KAFKA_TOPIC='test_topic',
+        VALUE_FORMAT='JSON',
+        PARTITIONS=1
+    );
+    """
+
+    max_retries = 5
+    delay = 10  # seconds
+
+    for attempt in range(max_retries):
+        try:
+            await database.create_stream(sql_statement, STREAM_NAME)
+            assert database.stream_exists(STREAM_NAME)
+            break
+        except (
+            httpx.ConnectError,
+            KSQLNotReadyError,
+            httpx.RemoteProtocolError,
+            httpx.ReadError,
+        ) as e:
+            if attempt < max_retries - 1:
+                print(
+                    f"Attempt {attempt + 1}/{max_retries} failed with error: {e}. Retrying in {delay} seconds..."
+                )
+                time.sleep(delay)
+            else:
+                raise
+        except Exception as e:
+            print(f"Test failed with an unexpected error: {e}")
+            raise
